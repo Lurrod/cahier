@@ -27,7 +27,7 @@
   "dependencies": {
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
+    "dotenv": "^18.0.0",
     "drawably": "^0.4.2",
     "electron-updater": "^6.8.9",
     "express": "^5.2.1",

@@ -365,6 +365,12 @@ const priorityMark = (priority) => {
   return `<span class="task-prio" data-level="${priority}" role="img" aria-label="Priorité ${PRIORITY_LABELS[priority]}">*</span>`;
 };
 
+/** Pourquoi un dossier répond à la recherche alors que son titre n'y est pas. */
+const matchedStepsNote = (titles) =>
+  titles?.length
+    ? `<p class="task-matched-steps">↳ dans les étapes : ${titles.map(escapeHtml).join(' · ')}</p>`
+    : '';
+
 const renderTaskItem = (task) => {
   const li = document.createElement('li');
   li.className = `task${task.completed ? ' is-done' : ''}`;
@@ -429,6 +435,7 @@ const renderTaskItem = (task) => {
       <span class="task-title">${priorityMark(task.priority)}${escapeHtml(task.title)}</span>
       ${task.description ? `<p class="task-desc">${escapeHtml(task.description)}</p>` : ''}
       ${metaParts.length ? `<div class="task-meta">${metaParts.join('')}</div>` : ''}
+      ${matchedStepsNote(task.matchedSteps)}
     </div>
     <div class="task-actions">
       <button class="btn edit" type="button" data-sketch="button" data-tone="neutral">Modifier</button>

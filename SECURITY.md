@@ -54,6 +54,10 @@ presque tout le reste :
   neutralisée à l'export CSV — un tableur l'exécuterait comme une formule.
 - **Pas d'opérateur Mongo fourni par le client** : les filtres de `GET /tasks`
   et les listes d'identifiants sont construits côté serveur.
+- **La recherche est bornée** : le terme (100 caractères au plus) est échappé
+  avant de devenir une expression régulière, et la même expression sert à
+  chercher dans les étapes, lues à 500 au plus — une recherche ne peut pas
+  forcer la lecture de toute la base.
 - **Les réglages sont validés contre un schéma fermé** : `PUT /preferences`
   n'écrit que des clés connues et des valeurs énumérées à l'avance. Une clé
   inventée est jetée, une valeur non reconnue retombe sur le défaut. Rien de ce

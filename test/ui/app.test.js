@@ -1108,6 +1108,33 @@ describe('récurrence', () => {
   });
 });
 
+describe('recherche dans les étapes', () => {
+  test('un dossier trouvé par ses étapes nomme celles qui ont répondu', async () => {
+    server.tasks = [
+      task('Devis cuisine', { childCount: 2, childDone: 0, matchedSteps: ['Verser l’acompte'] }),
+    ];
+    await boot();
+
+    const trouvees = document.querySelector('.task-matched-steps');
+    expect(trouvees).not.toBeNull();
+    expect(trouvees.textContent).toContain('Verser l’acompte');
+  });
+
+  test('le titre d’une étape trouvée est échappé', async () => {
+    server.tasks = [task('Devis', { matchedSteps: ['<img src=x onerror=alert(1)>'] })];
+    await boot();
+
+    expect(document.querySelector('.task-matched-steps img')).toBeNull();
+  });
+
+  test('sans recherche, rien de tel', async () => {
+    server.tasks = [task('Devis cuisine', { childCount: 2, childDone: 0 })];
+    await boot();
+
+    expect(document.querySelector('.task-matched-steps')).toBeNull();
+  });
+});
+
 describe('reporter', () => {
   const press = (key, options = {}) =>
     document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...options }));

@@ -131,7 +131,7 @@ tant que `CORS_ORIGIN` n'est pas défini.
   crayon), vue d'ouverture (statut, échéance, tri) et mise à jour. Ils vivent
   dans la base, comme le reste ; l'apparence est en plus mise en miroir dans le
   stockage local pour être reposée avant même la réponse du serveur
-- **Recherche** (titre + description) — raccourci `/`
+- **Recherche** (titre + description, étapes comprises) — raccourci `/`
 - **Tri** : par création, par échéance ou par priorité
 - **Tri, filtres et recherche côté serveur** : ils portent sur toute la base, pas sur la page affichée
 - **Pagination** déterministe côté serveur (5 par page)
@@ -229,9 +229,10 @@ sur l'onglet « en retard ».
 
 `GET /tasks` ne renvoie que les **racines** : lister les étapes rendrait la pagination
 incohérente, une page de cinq pouvant n'afficher qu'un dossier et ses quatre étapes. Chaque
-racine porte `childCount` et `childDone`. Conséquence assumée : **la recherche ne trouve pas
-une étape** — chercher « acompte » ne remonte pas l'étape « verser l'acompte » nichée sous
-« Devis ».
+racine porte `childCount` et `childDone`. La recherche, elle, lit aussi les étapes : chercher
+« acompte » remonte le dossier « Devis » qui contient « verser l'acompte », et ce dossier porte
+alors `matchedSteps` — les titres des étapes qui ont répondu, pour que la liste puisse dire
+pourquoi il est là. Un dossier trouvé par son propre titre n'en porte pas.
 
 ### Récurrence
 

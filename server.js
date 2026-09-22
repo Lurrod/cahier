@@ -8,6 +8,7 @@ require('dotenv').config();
 const { exportShape, validateImport, HEX_COLOR } = require('./lib/portable');
 const { toMarkdown, toCsv } = require('./lib/formats');
 const { FREQUENCES, nextDueDate } = require('./lib/recurrence');
+const { etapesTrouvees, annoterEtapes } = require('./lib/recherche');
 const { normalizeTags } = require('./lib/tags');
 const { NEEDS_RENUMBER, rankBetween, renumber } = require('./lib/ordering');
 const { remindAtFor, messageGroupe, RETARD_MAX_MS } = require('./lib/reminders');
@@ -500,8 +501,18 @@ const recurrenceInvalide = (apres) => {
   return null;
 };
 
-/** Filtre de liste — statut, échéance, catégorie et recherche portent sur TOUTES les tâches. */
-const buildFilter = (query) => {
+/** Le terme de recherche en regex, échappé : il vient du client. */
+const aiguilleDe = (query) => {
+  const term = asString(query.q, MAX_SEARCH);
+  return term ? new RegExp(escapeRegex(term), 'i') : null;
+};
+
+/**
+ * Filtre de liste — statut, échéance, catégorie et recherche portent sur TOUTES les tâches.
+ * @param {object} query
+ * @param {string[]} dossiers racines dont une étape répond à la recherche
+ */
+const buildFilter = (query, dossiers = []) => {
   // seules les racines sont listées : compter les étapes rendrait la
   // pagination incohérente, une page de 5 pouvant n'afficher qu'un dossier
   const filter = { deletedAt: null, parentId: null };
@@ -524,11 +535,11 @@ const buildFilter = (query) => {
   const due = dueClause(asString(query.due, 16));
   if (due) Object.assign(filter, due);
 
-  const term = asString(query.q, MAX_SEARCH);
-  if (term) {
-    // le terme vient du client : il est échappé avant de devenir une regex
-    const needle = new RegExp(escapeRegex(term), 'i');
-    filter.$or = [{ title: needle }, { description: needle }];
+  const needle = aiguilleDe(query);
+  if (needle) {
+    // les identifiants viennent de la base, pas du client : ils sont sûrs
+    const parEtape = dossiers.map((id) => new mongoose.Types.ObjectId(id));
+    filter.$or = [{ title: needle }, { description: needle }, { _id: { $in: parEtape } }];
   }
 
   return filter;
@@ -722,7 +733,9 @@ app.get('/tasks', async (req, res) => {
     const requestedSort = asString(req.query.sort, 16);
     const sort = Object.hasOwn(SORTS, requestedSort) ? requestedSort : 'creation';
 
-    const filter = buildFilter(req.query);
+    const aiguille = aiguilleDe(req.query);
+    const parDossier = aiguille ? await etapesTrouvees(aiguille, Task) : new Map();
+    const filter = buildFilter(req.query, [...parDossier.keys()]);
     const total = await Task.countDocuments(filter);
     const { limit, totalPages, currentPage, skip } = paginate(req.query, total);
 
@@ -738,7 +751,12 @@ app.get('/tasks', async (req, res) => {
       { $project: { noDue: 0, priorityRank: 0, etapes: 0 } },
     ]);
 
-    res.status(200).json({ tasks, total, totalPages, currentPage });
+    res.status(200).json({
+      tasks: aiguille ? annoterEtapes(tasks, parDossier, aiguille) : tasks,
+      total,
+      totalPages,
+      currentPage,
+    });
   } catch (error) {
     fail(res, error);
   }

@@ -1203,6 +1203,69 @@ describe('Sous-tâches', () => {
   });
 });
 
+describe('Recherche dans les étapes', () => {
+  const famille = async () => {
+    const devis = await request(app).post('/tasks').send({ title: 'Devis cuisine' });
+    await request(app).post('/tasks').send({ title: 'Verser l’acompte', parentId: devis.body._id });
+    await request(app).post('/tasks').send({ title: 'Choisir le plan', parentId: devis.body._id });
+    return devis.body._id;
+  };
+
+  test('chercher une étape remonte son dossier', async () => {
+    const id = await famille();
+
+    const res = await request(app).get('/tasks?q=acompte');
+
+    expect(res.body.tasks.map((t) => t._id)).toEqual([id]);
+  });
+
+  test('le dossier dit quelles étapes ont répondu', async () => {
+    await famille();
+
+    const res = await request(app).get('/tasks?q=acompte');
+
+    // l'utilisateur doit voir pourquoi « Devis cuisine » répond à « acompte »
+    expect(res.body.tasks[0].matchedSteps).toEqual(['Verser l’acompte']);
+  });
+
+  test('un dossier qui répond par son titre ne porte pas d’étapes trouvées', async () => {
+    await famille();
+
+    const res = await request(app).get('/tasks?q=cuisine');
+
+    expect(res.body.tasks[0].matchedSteps).toBeUndefined();
+  });
+
+  test('une étape à la corbeille ne fait plus remonter son dossier', async () => {
+    const id = await famille();
+    const etapes = await request(app).get(`/tasks/${id}/children`);
+    const acompte = etapes.body.tasks.find((t) => t.title.includes('acompte'));
+    await request(app).delete(`/tasks/${acompte._id}`);
+
+    const res = await request(app).get('/tasks?q=acompte');
+
+    expect(res.body.tasks).toHaveLength(0);
+  });
+
+  test('les autres filtres portent toujours sur le dossier', async () => {
+    const id = await famille();
+    await request(app).put(`/tasks/${id}`).send({ completed: true });
+
+    const res = await request(app).get('/tasks?q=acompte&status=active');
+
+    expect(res.body.tasks).toHaveLength(0);
+  });
+
+  test('le compte total inclut les dossiers trouvés par leurs étapes', async () => {
+    await famille();
+    await request(app).post('/tasks').send({ title: 'Acompte garage' });
+
+    const res = await request(app).get('/tasks?q=acompte');
+
+    expect(res.body.total).toBe(2);
+  });
+});
+
 describe('Récurrence', () => {
   const dans = (jours, heure = 9) => {
     const d = new Date();

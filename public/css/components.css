@@ -764,6 +764,14 @@
   color: var(--ink-soft);
 }
 
+/* une annotation de marge, pas une ligne de plus : elle explique, elle ne compte pas */
+.task-matched-steps {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
 /* au stylo rouge, comme le retard qu'il vient réparer — mais sans cadre : un
    geste d'appoint, pas un troisième bouton d'action */
 .task-postpone {

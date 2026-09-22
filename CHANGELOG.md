@@ -8,6 +8,20 @@ Une version se publie en étiquetant un commit : `npm version <niveau>` puis
 release brouillon ; publier ce brouillon dans GitHub est ce qui la rend visible
 des postes déjà installés.
 
+## [Non publié]
+
+### Ajouté
+
+- **Deux nouvelles récurrences : les jours ouvrés et l'année.** « Chaque jour
+  ouvré » saute le week-end — un point du vendredi revient le lundi. « Chaque
+  année » sert aux anniversaires, aux échéances d'assurance, à la déclaration
+  d'impôts ; posée un 29 février, elle revient le 28 les années ordinaires.
+- **La récurrence s'écrit dans la saisie rapide.** `Poubelles tous les mardis`,
+  `Loyer chaque mois`, `Standup chaque jour ouvré 9h30`, `Filtre toutes les 2
+semaines` : l'aperçu montre la répétition comprise, et l'échéance est posée
+  d'office sur la prochaine occurrence, puisqu'une série a besoin d'une date
+  pour avancer. Un choix fait dans le menu l'emporte toujours sur le texte.
+
 ## [3.2.0] — 2026-09-18
 
 ### Modifié

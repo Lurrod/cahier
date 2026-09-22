@@ -7,7 +7,7 @@ const fs = require('fs');
 require('dotenv').config();
 const { exportShape, validateImport, HEX_COLOR } = require('./lib/portable');
 const { toMarkdown, toCsv } = require('./lib/formats');
-const { nextDueDate } = require('./lib/recurrence');
+const { FREQUENCES, nextDueDate } = require('./lib/recurrence');
 const { normalizeTags } = require('./lib/tags');
 const { NEEDS_RENUMBER, rankBetween, renumber } = require('./lib/ordering');
 const { remindAtFor, messageGroupe, RETARD_MAX_MS } = require('./lib/reminders');
@@ -181,7 +181,7 @@ const taskSchema = new mongoose.Schema({
   // qui cale les anciennes sur leur date d'écriture.
   order: { type: Number, default: Date.now, index: true },
   recurrence: {
-    freq: { type: String, enum: ['', 'daily', 'weekly', 'monthly'], default: '' },
+    freq: { type: String, enum: ['', ...FREQUENCES], default: '' },
     interval: { type: Number, default: 1, min: 1, max: 99 },
     until: { type: Date, default: null },
   },

@@ -1224,6 +1224,19 @@ describe('Récurrence', () => {
     expect(res.body.recurrence.freq).toBe('weekly');
   });
 
+  test.each(['weekdays', 'yearly'])('POST /tasks accepte la fréquence %s', async (freq) => {
+    const res = await request(app)
+      .post('/tasks')
+      .send({
+        title: 'Anniversaire',
+        dueDate: dans(1),
+        recurrence: { freq, interval: 1, until: null },
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.recurrence.freq).toBe(freq);
+  });
+
   test('une récurrence sans échéance est refusée', async () => {
     const res = await request(app)
       .post('/tasks')
@@ -1361,7 +1374,7 @@ describe('Récurrence', () => {
       .send({
         title: 'Bizarre',
         dueDate: dans(1),
-        recurrence: { freq: 'yearly', interval: 1, until: null },
+        recurrence: { freq: 'hourly', interval: 1, until: null },
       });
 
     expect(res.status).toBe(400);

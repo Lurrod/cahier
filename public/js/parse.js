@@ -47,6 +47,13 @@ const RE_CATEGORY = /(^|\s)#([\p{L}\p{N}_-]{1,32})(?=[\s.,!?;:]|$)/u;
    au moins un caractère de mot après le signe : un `+` isolé, comme dans
    « 1 + 1 », ne doit rien déclencher. `g` permet d'en cumuler plusieurs. */
 const RE_TAG = /(^|\s)\+([\p{L}\p{N}_-]+)/gu;
+/* « tous les jours », « chaque mois », « toutes les 2 semaines », « tous les
+   mardis ». Le mot qui suit « chaque » / « tous les » est exigé : « chaque
+   chose » ne doit rien déclencher. Les jours ouvrés passent avant « jours »
+   dans l'alternative, sinon « jours » serait pris seul et « ouvrés » resterait
+   dans le titre. */
+const RE_RECURRENCE =
+  /(^|\s)(?:tou(?:s|tes)\s+les|chaque)\s+(?:(\d{1,2})\s+)?(jours?\s+ouvr(?:[ée]s?|ables?)|jours?|semaines?|mois|ans|ann[ée]es?|lundis?|mardis?|mercredis?|jeudis?|vendredis?|samedis?|dimanches?)(?=[\s.,!?;:]|$)/iu;
 const RE_IN = /(^|\s)dans\s+(\d{1,3})\s*(jours?|j|semaines?|sem)\b/iu;
 const RE_RELATIVE = /(^|\s)(apr[èe]s-demain|demain|aujourd['’]?hui|auj)\b/iu;
 const RE_WEEKDAY =
@@ -76,12 +83,32 @@ const addDays = (date, days) => {
   return d;
 };
 
+/** Le prochain `weekday` strictement après `now` : « mardi » un mardi vise le suivant. */
+const nextWeekday = (now, weekday) => {
+  const today = atMidnight(now);
+  return addDays(today, (weekday - today.getDay() + 7) % 7 || 7);
+};
+
+/** Le mot de la formule de récurrence, rendu en fréquence (et jour visé, le cas échéant). */
+const readRecurrenceWord = (raw) => {
+  const word = plain(raw);
+  if (word.startsWith('jour') && word.includes('ouvr')) return { freq: 'weekdays' };
+  if (word.startsWith('jour')) return { freq: 'daily' };
+  if (word.startsWith('semaine')) return { freq: 'weekly' };
+  if (word === 'mois') return { freq: 'monthly' };
+  if (word === 'ans' || word.startsWith('annee')) return { freq: 'yearly' };
+  return { freq: 'weekly', weekday: WEEKDAYS[word.replace(/s$/, '')] };
+};
+
+const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
+
 /**
  * Lit une saisie libre et en extrait échéance, catégorie et priorité.
  * @param {string} input texte saisi
  * @param {{now?: Date, categories?: string[]}} options horloge et catégories connues
  * @returns {{title: string, dueDate: string|null, category: string, priority: string,
- *            tags: string[], tokens: Array<{type: string, text: string}>}}
+ *            tags: string[], recurrence: {freq: string, interval: number}|null,
+ *            tokens: Array<{type: string, text: string}>}}
  */
 export function parseQuickEntry(input, { now = new Date(), categories = [] } = {}) {
   const text = String(input ?? '');
@@ -91,6 +118,7 @@ export function parseQuickEntry(input, { now = new Date(), categories = [] } = {
   let time = null;
   let category = '';
   let priority = '';
+  let recurrence = null;
 
   const overlaps = (start, end) => cuts.some(([s, e]) => start < e && s < end);
 
@@ -136,13 +164,25 @@ export function parseQuickEntry(input, { now = new Date(), categories = [] } = {
     if (take(mTag, 'tag')) tags.push(mTag[2]);
   }
 
+  // avant les dates : « chaque lundi » doit être pris en entier, sans quoi le
+  // motif des jours de semaine emporterait « lundi » et laisserait « chaque »
+  const mRecurrence = RE_RECURRENCE.exec(text);
+  if (mRecurrence && take(mRecurrence, 'recurrence')) {
+    const { freq, weekday } = readRecurrenceWord(mRecurrence[3]);
+    const interval = Math.max(1, Math.min(99, parseInt(mRecurrence[2], 10) || 1));
+    recurrence = { freq, interval };
+    if (weekday !== undefined) day = nextWeekday(now, weekday);
+  }
+
   // une seule source de jour : le premier motif qui matche l'emporte
   const mIn = RE_IN.exec(text);
   const mRelative = RE_RELATIVE.exec(text);
   const mWeekday = RE_WEEKDAY.exec(text);
   const mDate = RE_DATE.exec(text);
 
-  if (mIn && take(mIn, 'date')) {
+  if (day) {
+    // déjà posé par la récurrence : « chaque lundi » est aussi une date
+  } else if (mIn && take(mIn, 'date')) {
     const step = plain(mIn[3]).startsWith('sem') ? 7 : 1;
     day = addDays(atMidnight(now), parseInt(mIn[2], 10) * step);
   } else if (mRelative && take(mRelative, 'date')) {
@@ -153,10 +193,8 @@ export function parseQuickEntry(input, { now = new Date(), categories = [] } = {
     // même forme que ses trois branches sœurs : un `take` refusé doit laisser
     // sa chance au motif suivant, pas abandonner la date en silence
   } else if (mWeekday && take(mWeekday, 'date')) {
-    const today = atMidnight(now);
     // « mercredi » un mercredi désigne le mercredi suivant, jamais aujourd'hui
-    const delta = (WEEKDAYS[plain(mWeekday[2])] - today.getDay() + 7) % 7 || 7;
-    day = addDays(today, delta);
+    day = nextWeekday(now, WEEKDAYS[plain(mWeekday[2])]);
   } else if (mDate) {
     const dayNum = parseInt(mDate[2], 10);
     const monthNum = parseInt(mDate[3], 10);
@@ -181,13 +219,18 @@ export function parseQuickEntry(input, { now = new Date(), categories = [] } = {
     }
   }
 
+  // une récurrence a besoin d'une échéance pour avancer : sans date dite,
+  // elle s'ancre sur la prochaine heure possible, comme une heure seule
   let dueDate = null;
-  if (day || time) {
+  if (day || time || recurrence) {
     const resolved = new Date(day || atMidnight(now));
     resolved.setHours(time ? time.hours : DEFAULT_HOUR, time ? time.minutes : 0, 0, 0);
     // une heure seule déjà passée désigne le lendemain
-    const shift = !day && resolved.getTime() <= now.getTime();
-    dueDate = (shift ? addDays(resolved, 1) : resolved).toISOString();
+    let anchor = !day && resolved.getTime() <= now.getTime() ? addDays(resolved, 1) : resolved;
+    if (!day && recurrence?.freq === 'weekdays') {
+      while (isWeekend(anchor)) anchor = addDays(anchor, 1);
+    }
+    dueDate = anchor.toISOString();
   }
 
   // découpe par la fin : les indices des coupes restantes restent valides
@@ -205,5 +248,5 @@ export function parseQuickEntry(input, { now = new Date(), categories = [] } = {
     .sort((a, b) => a.start - b.start)
     .map(({ type, text: label }) => ({ type, text: label }));
 
-  return { title, dueDate, category, priority, tags, tokens: ordered };
+  return { title, dueDate, category, priority, tags, recurrence, tokens: ordered };
 }

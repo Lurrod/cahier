@@ -102,7 +102,7 @@ tant que `CORS_ORIGIN` n'est pas défini.
 - **Tâches** : créer, modifier, terminer, supprimer — avec **annulation** de la suppression
 - **Étapes** : une tâche porte des sous-tâches (un seul niveau) ; cocher le dossier coche ses
   étapes, la corbeille emporte et rend la famille entière
-- **Récurrence** : quotidienne, hebdomadaire ou mensuelle — cocher une occurrence crée
+- **Récurrence** : quotidienne, jours ouvrés, hebdomadaire, mensuelle ou annuelle — cocher une occurrence crée
   immédiatement la suivante, calée sur l'échéance précédente (donc sans dérive en cas de
   retard) ; les étapes sont reprises, décochées
 - **Étiquettes** : plusieurs mots-clés transversaux par tâche (`+maison` en saisie rapide),
@@ -118,7 +118,8 @@ tant que `CORS_ORIGIN` n'est pas défini.
   compteur de retard — les horizons sont emboîtés, une tâche en retard reste visible dans
   « aujourd'hui » et « cette semaine »
 - **Saisie rapide** : `Dentiste demain 14h #Santé !haute` est lu à la volée, avec aperçu de ce
-  qui a été compris avant validation
+  qui a été compris avant validation — la récurrence aussi : `Poubelles tous les mardis`,
+  `Loyer chaque mois`, `Standup chaque jour ouvré 9h30`, `Filtre toutes les 2 semaines`
 - **Corbeille** consultable : restaurer ou supprimer définitivement (en deux clics)
 - **Clavier** : `n` saisir · `/` chercher · `j`/`k` naviguer · `x` cocher · `e` modifier ·
   `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
@@ -154,7 +155,7 @@ tant que `CORS_ORIGIN` n'est pas défini.
   "tags": ["string (24 max, minuscules)"],
   "order": 0,
   "recurrence": {
-    "freq": "daily | weekly | monthly | vide",
+    "freq": "daily | weekdays | weekly | monthly | yearly | vide",
     "interval": 1,
     "until": "ISO date | null"
   },
@@ -239,7 +240,12 @@ cochée avec trois jours de retard revient le mardi suivant, pas le vendredi. Sa
 les mardis » dériverait d'un cran à chaque retard.
 
 Une récurrence exige une échéance — c'est elle qu'on fait avancer. Une mensuelle posée un 31
-retombe sur le dernier jour des mois plus courts (28, 29 ou 30), et ne saute pas de mois.
+retombe sur le dernier jour des mois plus courts (28, 29 ou 30), et ne saute pas de mois ; une
+annuelle posée un 29 février revient le 28 les années ordinaires. Les jours ouvrés sautent le
+samedi et le dimanche — pas les jours fériés, que le Cahier ne connaît pas.
+
+Écrite dans la saisie rapide sans date (`Arroser tous les jours`), une récurrence s'ancre sur la
+prochaine occurrence possible : aujourd'hui à 9 h si ce n'est pas passé, demain sinon.
 
 ### Rappels
 

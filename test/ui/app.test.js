@@ -1053,6 +1053,47 @@ describe('récurrence', () => {
     expect(creation.body.recurrence.freq).toBe('weekly');
   });
 
+  test('la récurrence écrite dans le titre part avec la tâche, et son échéance avec elle', async () => {
+    await boot();
+
+    document.getElementById('task-title').value = 'Poubelles tous les mardis';
+    document
+      .getElementById('task-form')
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+
+    const creation = server.calls.find((c) => c.method === 'POST');
+    expect(creation.body.title).toBe('Poubelles');
+    expect(creation.body.recurrence).toEqual({ freq: 'weekly', interval: 1, until: null });
+    // sans échéance, le serveur refuserait la récurrence
+    expect(new Date(creation.body.dueDate).getDay()).toBe(2);
+  });
+
+  test('le choix fait dans le menu l’emporte sur ce que le titre laisse deviner', async () => {
+    await boot();
+
+    document.getElementById('task-title').value = 'Loyer chaque mois';
+    document.getElementById('task-due-date').value = '2026-10-05T09:00';
+    document.getElementById('task-recurrence').value = 'yearly';
+    document
+      .getElementById('task-form')
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+
+    const creation = server.calls.find((c) => c.method === 'POST');
+    expect(creation.body.recurrence.freq).toBe('yearly');
+  });
+
+  test.each([
+    ['weekdays', /ouvré/i],
+    ['yearly', /an/i],
+  ])('le pictogramme nomme la fréquence %s', async (freq, attendu) => {
+    server.tasks = [task('Série', { recurrence: { freq, interval: 1, until: null } })];
+    await boot();
+
+    expect(document.querySelector('.task-recurrence').getAttribute('title')).toMatch(attendu);
+  });
+
   test('le champ de récurrence est désactivé tant qu’il n’y a pas d’échéance', async () => {
     await boot();
 

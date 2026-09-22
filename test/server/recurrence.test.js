@@ -94,7 +94,68 @@ describe('nextDueDate', () => {
 
   test('une fréquence inconnue ne produit rien plutôt qu’une date fausse', () => {
     expect(
-      nextDueDate(d('2026-09-15T09:00:00'), { freq: 'yearly', interval: 1, until: null })
+      nextDueDate(d('2026-09-15T09:00:00'), { freq: 'hourly', interval: 1, until: null })
     ).toBeNull();
+  });
+});
+
+describe('nextDueDate — jours ouvrés', () => {
+  const ouvres = { freq: 'weekdays', interval: 1, until: null };
+
+  test('un mardi revient le mercredi, à la même heure', () => {
+    const suite = nextDueDate(d('2026-09-15T08:45:00'), ouvres);
+    expect(suite.getDate()).toBe(16);
+    expect(suite.getHours()).toBe(8);
+    expect(suite.getMinutes()).toBe(45);
+  });
+
+  test('un vendredi saute le week-end et revient le lundi', () => {
+    const suite = nextDueDate(d('2026-09-18T09:00:00'), ouvres);
+    expect(suite.getDay()).toBe(1);
+    expect(suite.getDate()).toBe(21);
+  });
+
+  test('une échéance posée un samedi revient aussi le lundi', () => {
+    const suite = nextDueDate(d('2026-09-19T09:00:00'), ouvres);
+    expect(suite.getDate()).toBe(21);
+  });
+
+  test('l’intervalle compte des jours ouvrés, pas des jours', () => {
+    // jeudi + 2 jours ouvrés = lundi, pas samedi
+    const suite = nextDueDate(d('2026-09-17T09:00:00'), { ...ouvres, interval: 2 });
+    expect(suite.getDate()).toBe(21);
+  });
+});
+
+describe('nextDueDate — annuelle', () => {
+  test('le même jour l’année suivante', () => {
+    const suite = nextDueDate(d('2026-10-03T09:00:00'), {
+      freq: 'yearly',
+      interval: 1,
+      until: null,
+    });
+    expect(suite.getFullYear()).toBe(2027);
+    expect(suite.getMonth()).toBe(9);
+    expect(suite.getDate()).toBe(3);
+  });
+
+  test('un 29 février revient le 28 les années ordinaires, sans glisser en mars', () => {
+    const suite = nextDueDate(d('2028-02-29T09:00:00'), {
+      freq: 'yearly',
+      interval: 1,
+      until: null,
+    });
+    expect(suite.getFullYear()).toBe(2029);
+    expect(suite.getMonth()).toBe(1);
+    expect(suite.getDate()).toBe(28);
+  });
+
+  test('l’intervalle saute d’autant d’années', () => {
+    const suite = nextDueDate(d('2026-10-03T09:00:00'), {
+      freq: 'yearly',
+      interval: 2,
+      until: null,
+    });
+    expect(suite.getFullYear()).toBe(2028);
   });
 });

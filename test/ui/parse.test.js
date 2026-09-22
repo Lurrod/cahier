@@ -279,3 +279,70 @@ describe('étiquettes', () => {
     expect(parseQuickEntry('Simple', { now: NOW, categories: [] }).tags).toEqual([]);
   });
 });
+
+describe('parseQuickEntry — récurrence', () => {
+  test('sans motif, pas de récurrence', () => {
+    expect(parse('Relire le brief').recurrence).toBeNull();
+  });
+
+  test.each([
+    ['Arroser tous les jours', 'daily'],
+    ['Arroser chaque jour', 'daily'],
+    ['Standup chaque jour ouvré', 'weekdays'],
+    ['Standup tous les jours ouvrables', 'weekdays'],
+    ['Ménage toutes les semaines', 'weekly'],
+    ['Loyer chaque mois', 'monthly'],
+    ['Loyer tous les mois', 'monthly'],
+    ['Assurance chaque année', 'yearly'],
+    ['Assurance tous les ans', 'yearly'],
+  ])('« %s » se répète en %s', (texte, freq) => {
+    const r = parse(texte);
+    expect(r.recurrence).toEqual({ freq, interval: 1 });
+    expect(r.tokens.map((t) => t.type)).toContain('recurrence');
+  });
+
+  test('la formule sort du titre', () => {
+    expect(parse('Payer le loyer chaque mois').title).toBe('Payer le loyer');
+  });
+
+  test('un nombre règle l’intervalle', () => {
+    expect(parse('Filtre toutes les 2 semaines').recurrence).toEqual({
+      freq: 'weekly',
+      interval: 2,
+    });
+  });
+
+  test('« tous les mardis » répète chaque semaine et vise le prochain mardi', () => {
+    // NOW est un mercredi : le prochain mardi est le 22
+    const r = parse('Poubelles tous les mardis');
+    expect(r.recurrence).toEqual({ freq: 'weekly', interval: 1 });
+    expect(at(r)).toEqual([2026, 9, 22, 9, 0]);
+    expect(r.title).toBe('Poubelles');
+  });
+
+  test('« chaque lundi 8h » garde l’heure', () => {
+    expect(at(parse('Réunion chaque lundi 8h'))).toEqual([2026, 9, 21, 8, 0]);
+  });
+
+  test('une récurrence sans date s’ancre aujourd’hui, puisqu’elle doit avancer depuis quelque part', () => {
+    // à 10h, 9h est passé : l'ancre du jour même tomberait déjà en retard
+    expect(at(parse('Arroser tous les jours'))).toEqual([2026, 9, 17, 9, 0]);
+    expect(at(parse('Arroser tous les jours 18h'))).toEqual([2026, 9, 16, 18, 0]);
+  });
+
+  test('une date explicite reste l’ancre de la série', () => {
+    expect(at(parse('Assurance chaque année le 03/10'))).toEqual([2026, 10, 3, 9, 0]);
+  });
+
+  test('les jours ouvrés ne s’ancrent jamais un week-end', () => {
+    const vendrediSoir = new Date(2026, 8, 18, 20, 0, 0);
+    const r = parseQuickEntry('Standup chaque jour ouvré', { now: vendrediSoir });
+    expect(new Date(r.dueDate).getDay()).toBe(1);
+  });
+
+  test('« chaque » seul ne déclenche rien', () => {
+    const r = parse('Ranger chaque chose');
+    expect(r.recurrence).toBeNull();
+    expect(r.title).toBe('Ranger chaque chose');
+  });
+});

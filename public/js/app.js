@@ -50,8 +50,10 @@ const PRIORITY_LABELS = { high: 'haute', medium: 'moyenne', low: 'basse' };
 /** Ce que dit le pictogramme de récurrence au survol et aux aides techniques. */
 const RECURRENCE_LABELS = {
   daily: 'Chaque jour',
+  weekdays: 'Chaque jour ouvré',
   weekly: 'Chaque semaine',
   monthly: 'Chaque mois',
+  yearly: 'Chaque année',
 };
 
 /** Ce que dit le pictogramme de rappel au survol et aux aides techniques. */
@@ -596,6 +598,17 @@ const clearComposer = () => {
   syncDueDependentFields();
 };
 
+/**
+ * La récurrence à envoyer : le menu l'emporte, comme pour les autres champs,
+ * sinon ce que le titre a laissé lire (« tous les mardis »).
+ */
+const composerRecurrence = (parsed) => {
+  if (taskRecurrenceInput.value) {
+    return { freq: taskRecurrenceInput.value, interval: 1, until: null };
+  }
+  return parsed.recurrence ? { ...parsed.recurrence, until: null } : undefined;
+};
+
 taskForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const parsed = parseTitleInput();
@@ -618,9 +631,7 @@ taskForm.addEventListener('submit', async (e) => {
       category: taskCategorySelect.value || parsed.category,
       priority: taskPrioritySelect.value || parsed.priority,
       tags: parsed.tags,
-      recurrence: taskRecurrenceInput.value
-        ? { freq: taskRecurrenceInput.value, interval: 1, until: null }
-        : undefined,
+      recurrence: composerRecurrence(parsed),
       reminder: taskReminderInput.value ? { offset: taskReminderInput.value } : undefined,
     });
     clearComposer();

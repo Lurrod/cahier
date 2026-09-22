@@ -20,6 +20,8 @@ const paletteList = $('palette-list');
  *   focusSearch: () => void,
  *   openTrash: () => Promise<void>,
  *   ouvrirReglages: () => Promise<void>,
+ *   sauvegarder: () => void,
+ *   reporterRetards: () => Promise<void>,
  * }} deps Ce que la palette ne peut pas atteindre par elle-même : le focus sur
  * le composeur et la recherche vivent dans app.js, et la corbeille dans sa
  * propre closure (trash.js).
@@ -33,6 +35,7 @@ export const initPalette = ({
   openTrash,
   ouvrirReglages,
   sauvegarder,
+  reporterRetards,
 }) => {
   /** Commandes de la palette : libellé + action. Aucune ne dépend du DOM courant. */
   const PALETTE_COMMANDS = [
@@ -43,6 +46,7 @@ export const initPalette = ({
     { label: "Voir : aujourd'hui", run: () => selectDue('today') },
     { label: 'Voir : cette semaine', run: () => selectDue('week') },
     { label: 'Voir : sans date', run: () => selectDue('none') },
+    { label: 'Reporter les retards à demain', run: reporterRetards },
     { label: 'Ouvrir la corbeille', run: openTrash },
     { label: 'Ouvrir les réglages', run: ouvrirReglages },
     { label: 'Sauvegarder le cahier', run: sauvegarder },

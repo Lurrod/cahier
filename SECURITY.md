@@ -53,7 +53,9 @@ presque tout le reste :
 - **Exports assainis** : une cellule commençant par `=`, `+`, `-` ou `@` est
   neutralisée à l'export CSV — un tableur l'exécuterait comme une formule.
 - **Pas d'opérateur Mongo fourni par le client** : les filtres de `GET /tasks`
-  et les listes d'identifiants sont construits côté serveur.
+  et les listes d'identifiants sont construits côté serveur. `PATCH /tasks/due`
+  n'accepte que des identifiants de 24 caractères hexadécimaux et des dates
+  lisibles, 100 au plus, et refuse le lot entier au premier élément douteux.
 - **La recherche est bornée** : le terme (100 caractères au plus) est échappé
   avant de devenir une expression régulière, et la même expression sert à
   chercher dans les étapes, lues à 500 au plus — une recherche ne peut pas

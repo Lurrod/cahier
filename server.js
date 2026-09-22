@@ -11,7 +11,8 @@ const { FREQUENCES, nextDueDate } = require('./lib/recurrence');
 const { etapesTrouvees, annoterEtapes } = require('./lib/recherche');
 const { normalizeTags } = require('./lib/tags');
 const { NEEDS_RENUMBER, rankBetween, renumber } = require('./lib/ordering');
-const { remindAtFor, messageGroupe, RETARD_MAX_MS } = require('./lib/reminders');
+const { messageGroupe, poserHeureDeRappel, RETARD_MAX_MS } = require('./lib/reminders');
+const { lireReplanification, replanifier } = require('./lib/replanifier');
 const { sendNotification } = require('./lib/notify');
 const { listenWithFallback } = require('./lib/listen');
 const { creerDepotPreferences } = require('./lib/preferences-depot');
@@ -463,29 +464,6 @@ const regenererRecurrence = async (task) => {
 };
 
 /**
- * Recalcule l'heure du rappel à partir de l'état résultant.
- *
- * `at` est stocké plutôt que calculé à la lecture : le balayage doit rester
- * une requête indexée triviale, pas une arithmétique de dates en base.
- */
-const poserHeureDeRappel = (apres, avant = null) => {
-  const offset = apres?.reminder?.offset || '';
-  const at = remindAtFor(apres?.dueDate, offset);
-  // un rappel qui retombe à la même heure est le même rappel : la fenêtre
-  // « Modifier » renvoie toujours échéance et réglage, et corriger un titre
-  // ne doit pas refaire partir une notification déjà affichée
-  const inchange =
-    avant?.reminder?.offset === offset &&
-    new Date(avant?.reminder?.at ?? 0).getTime() === new Date(at ?? 0).getTime();
-  return {
-    offset,
-    at,
-    // un réglage qui change remet le compteur : le nouveau rappel doit partir
-    sentAt: inchange ? (avant.reminder.sentAt ?? null) : null,
-  };
-};
-
-/**
  * Une récurrence a besoin d'une échéance : c'est elle qu'on fait avancer.
  * Le contrôle porte sur l'état APRÈS modification — retirer l'échéance d'une
  * tâche déjà récurrente la laisserait sans ancrage, et la série s'arrêterait
@@ -840,6 +818,22 @@ app.post('/tasks/bulk', async (req, res) => {
  * serveur qui calcule, ce qui évite qu'un client en retard d'un
  * rafraîchissement pose un rang déjà pris.
  */
+/**
+ * Donne à plusieurs tâches chacune sa nouvelle échéance, en une requête.
+ * Les dates sont calculées par le client (report.js) : la règle « garder
+ * l'heure, ne jamais avancer » n'existe ainsi qu'à un seul endroit.
+ */
+app.patch('/tasks/due', async (req, res) => {
+  try {
+    const lu = lireReplanification(req.body?.items);
+    if (lu.erreur) return res.status(400).json({ error: lu.erreur });
+    const modified = await replanifier(lu.items, { Task, poserHeureDeRappel });
+    res.status(200).json({ modified });
+  } catch (error) {
+    fail(res, error);
+  }
+});
+
 app.patch('/tasks/:id/order', async (req, res) => {
   try {
     const task = await Task.findOne({ _id: req.params.id, deletedAt: null });

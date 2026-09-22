@@ -41,6 +41,9 @@ const listFor = (url) => {
   if (q) tasks = tasks.filter((t) => t.title.toLowerCase().includes(q));
   if (status === 'done') tasks = tasks.filter((t) => t.completed);
   if (status === 'active') tasks = tasks.filter((t) => !t.completed);
+  if (params.get('due') === 'overdue') {
+    tasks = tasks.filter((t) => t.dueDate && new Date(t.dueDate) < new Date());
+  }
 
   return { tasks, total: tasks.length, totalPages: 1, currentPage: 1 };
 };
@@ -77,6 +80,14 @@ const mutate = (url, method, body) => {
   if (method === 'PUT') {
     server.tasks = server.tasks.map((t) => (t._id === id ? { ...t, ...body } : t));
     return server.tasks.find((t) => t._id === id);
+  }
+
+  if (method === 'PATCH' && url === '/tasks/due') {
+    const cible = new Map(body.items.map(({ id, dueDate }) => [id, dueDate]));
+    server.tasks = server.tasks.map((t) =>
+      cible.has(t._id) ? { ...t, dueDate: cible.get(t._id) } : t
+    );
+    return { modified: cible.size };
   }
 
   if (method === 'PATCH' && url.endsWith('/order')) {
@@ -828,7 +839,7 @@ describe('clavier', () => {
     const labels = [...document.querySelectorAll('#palette-list .palette-item')].map((el) =>
       el.textContent.trim()
     );
-    expect(labels).toEqual(['Voir : en retard']);
+    expect(labels).toEqual(['Voir : en retard', 'Reporter les retards à demain']);
   });
 
   test('la palette sauvegarde sans dépendre d’un bouton de la page', async () => {
@@ -1105,6 +1116,70 @@ describe('récurrence', () => {
     date.dispatchEvent(new Event('input', { bubbles: true }));
 
     expect(champ.disabled).toBe(false);
+  });
+});
+
+describe('reporter tous les retards', () => {
+  const ilYA = (jours) => {
+    const d = new Date();
+    d.setDate(d.getDate() - jours);
+    d.setHours(14, 30, 0, 0);
+    return d.toISOString();
+  };
+
+  const lancer = async () => {
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
+    );
+    const input = document.getElementById('palette-input');
+    input.value = 'retards';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('#palette-list .palette-item').click();
+    await settle();
+  };
+
+  const envois = () => server.calls.filter((c) => c.url === '/tasks/due');
+
+  test('la palette reporte chaque retard à demain, chacun à son heure, en un envoi', async () => {
+    server.tasks = [
+      task('Plombier', { dueDate: ilYA(3) }),
+      task('Banque', { dueDate: ilYA(1) }),
+      task('Plus tard', { dueDate: null }),
+    ];
+    await boot();
+    await lancer();
+
+    expect(envois()).toHaveLength(1);
+    const { items } = envois()[0].body;
+    expect(items.map((i) => i.id).sort()).toEqual(['id-Banque', 'id-Plombier']);
+    const demain = new Date();
+    demain.setDate(demain.getDate() + 1);
+    items.forEach(({ dueDate }) => {
+      expect(new Date(dueDate).getDate()).toBe(demain.getDate());
+      expect(new Date(dueDate).getHours()).toBe(14);
+    });
+  });
+
+  test('« Annuler » remet chaque tâche à son échéance d’avant', async () => {
+    const avant = ilYA(3);
+    server.tasks = [task('Plombier', { dueDate: avant })];
+    await boot();
+    await lancer();
+
+    document.querySelector('.toast-action').click();
+    await settle();
+
+    expect(envois()).toHaveLength(2);
+    expect(envois()[1].body.items).toEqual([{ id: 'id-Plombier', dueDate: avant }]);
+  });
+
+  test('sans retard, rien ne part et la note le dit', async () => {
+    server.tasks = [task('Plus tard')];
+    await boot();
+    await lancer();
+
+    expect(envois()).toHaveLength(0);
+    expect(document.getElementById('toast-container').textContent).toMatch(/aucun retard/i);
   });
 });
 

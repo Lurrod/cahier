@@ -260,6 +260,43 @@ const postponeTask = async (task, cible) => {
   await refresh({ silent: true });
 };
 
+/**
+ * Tous les retards glissent à demain, chacun à son heure, en un seul envoi.
+ * La borne de 100 est celle du serveur : au-delà, la note le dit, et relancer
+ * la commande prend la suite.
+ */
+const postponeOverdue = async () => {
+  try {
+    const { tasks, total } = await api.listTasks({ due: 'overdue', status: 'active', limit: 100 });
+    if (tasks.length === 0) {
+      toast('Aucun retard à reporter.', 'info');
+      return;
+    }
+    const avant = tasks.map((t) => ({ id: t._id, dueDate: t.dueDate }));
+    await api.replanifier(avant.map((t) => ({ ...t, dueDate: reporter(t.dueDate, 'demain') })));
+    await refresh({ silent: true });
+    const suite =
+      total > tasks.length ? ` (${tasks.length} sur ${total} — relancer pour la suite)` : '';
+    toast(
+      `${tasks.length} retard${tasks.length > 1 ? 's' : ''} reporté${tasks.length > 1 ? 's' : ''} à demain${suite}.`,
+      'success',
+      {
+        label: 'Annuler',
+        onClick: async () => {
+          try {
+            await api.replanifier(avant);
+            await refresh({ silent: true });
+          } catch (error) {
+            toast(error.message, 'error');
+          }
+        },
+      }
+    );
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+};
+
 /** Suppression immédiate, réparable tant que la note « Annuler » est affichée. */
 const removeTask = async (task) => {
   state = { ...state, tasks: state.tasks.filter((t) => t._id !== task._id) };
@@ -762,6 +799,7 @@ const { openPalette, closePalette } = initPalette({
   openTrash,
   ouvrirReglages: () => reglages.ouvrir(),
   sauvegarder: () => telechargerSauvegarde(),
+  reporterRetards: postponeOverdue,
 });
 
 const { applyCursor } = initKeyboard({

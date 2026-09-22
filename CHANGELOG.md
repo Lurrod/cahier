@@ -30,6 +30,9 @@ semaines` : l'aperçu montre la répétition comprise, et l'échéance est posé
   au clavier, `r` repousse la tâche sélectionnée au lendemain et `R` au lundi
   qui vient, en gardant son heure. Trier ses retards ne demande plus d'ouvrir
   « Modifier » et de retaper une date.
+- **Reporter tous les retards d'un coup.** `Ctrl+K` → « Reporter les retards à
+  demain » : chaque tâche en retard glisse au lendemain en gardant son heure,
+  et « Annuler » les remet toutes où elles étaient.
 - **La recherche trouve les étapes.** Chercher « acompte » remonte le dossier
   « Devis cuisine » qui contient « Verser l'acompte », avec une note en marge
   qui dit quelle étape a répondu. Jusqu'ici, une étape était introuvable tant

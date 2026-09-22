@@ -1266,6 +1266,83 @@ describe('Recherche dans les étapes', () => {
   });
 });
 
+describe('Replanifier en bloc', () => {
+  const dans = (jours, heure = 14) => {
+    const d = new Date();
+    d.setDate(d.getDate() + jours);
+    d.setHours(heure, 30, 0, 0);
+    return d.toISOString();
+  };
+
+  const creer = async (extra) => (await request(app).post('/tasks').send(extra)).body;
+
+  test('chaque tâche reçoit sa propre échéance, en une requête', async () => {
+    const a = await creer({ title: 'A', dueDate: dans(-3) });
+    const b = await creer({ title: 'B', dueDate: dans(-1, 9) });
+
+    const res = await request(app)
+      .patch('/tasks/due')
+      .send({
+        items: [
+          { id: a._id, dueDate: dans(1) },
+          { id: b._id, dueDate: dans(1, 9) },
+        ],
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.modified).toBe(2);
+    const relue = await request(app).get(`/tasks/${b._id}`);
+    expect(relue.body.dueDate).toBe(dans(1, 9));
+  });
+
+  test('le rappel suit la nouvelle échéance et se réarme', async () => {
+    const a = await creer({ title: 'A', dueDate: dans(-1), reminder: { offset: '1h' } });
+
+    await request(app)
+      .patch('/tasks/due')
+      .send({ items: [{ id: a._id, dueDate: dans(1) }] });
+
+    const relue = await request(app).get(`/tasks/${a._id}`);
+    const attendue = new Date(new Date(dans(1)).getTime() - 60 * 60 * 1000);
+    expect(relue.body.reminder.at).toBe(attendue.toISOString());
+    expect(relue.body.reminder.sentAt).toBeNull();
+  });
+
+  test('une tâche à la corbeille n’est pas touchée', async () => {
+    const a = await creer({ title: 'A', dueDate: dans(-1) });
+    await request(app).delete(`/tasks/${a._id}`);
+
+    const res = await request(app)
+      .patch('/tasks/due')
+      .send({ items: [{ id: a._id, dueDate: dans(1) }] });
+
+    expect(res.body.modified).toBe(0);
+  });
+
+  test.each([
+    ['sans liste', {}],
+    ['une liste qui n’en est pas une', { items: 'tout' }],
+    ['une date illisible', { items: [{ id: '0123456789abcdef01234567', dueDate: 'bientôt' }] }],
+    ['une échéance retirée', { items: [{ id: '0123456789abcdef01234567', dueDate: null }] }],
+    [
+      'un opérateur à la place d’un identifiant',
+      { items: [{ id: { $ne: null }, dueDate: '2026-10-01T09:00:00Z' }] },
+    ],
+  ])('refuse %s', async (_, corps) => {
+    const res = await request(app).patch('/tasks/due').send(corps);
+    expect(res.status).toBe(400);
+  });
+
+  test('au-delà de 100 tâches, c’est refusé', async () => {
+    const items = Array.from({ length: 101 }, () => ({
+      id: '0123456789abcdef01234567',
+      dueDate: '2026-10-01T09:00:00Z',
+    }));
+    const res = await request(app).patch('/tasks/due').send({ items });
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('Récurrence', () => {
   const dans = (jours, heure = 9) => {
     const d = new Date();

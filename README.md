@@ -124,7 +124,8 @@ tant que `CORS_ORIGIN` n'est pas défini.
 - **Corbeille** consultable : restaurer ou supprimer définitivement (en deux clics)
 - **Reporter** : une tâche en retard porte « → demain » ; au clavier, `r` la repousse au
   lendemain et `R` au lundi qui vient, à la même heure. Une tâche à venir glisse depuis sa
-  propre échéance — reporter n'avance jamais rien
+  propre échéance — reporter n'avance jamais rien. `Ctrl+K` → « Reporter les retards à demain »
+  les déplace tous d'un coup, chacun à son heure, et se défait par « Annuler »
 - **Clavier** : `n` saisir · `/` chercher · `j`/`k` naviguer · `x` cocher · `e` modifier ·
   `r`/`R` reporter · `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
 - **Réglages** : apparence (densité, taille du texte, grain du papier, traits au
@@ -193,6 +194,7 @@ existence les reçoit au premier lancement, et relancer le serveur ne réécrit 
 | `GET`    | `/tasks/:id/children` | Étapes d'une tâche                              |
 | `PATCH`  | `/tasks/:id/order`    | Déplace une tâche entre deux voisines           |
 | `POST`   | `/tasks/bulk`         | Même action sur 100 tâches au plus              |
+| `PATCH`  | `/tasks/due`          | Une échéance propre à chacune, 100 au plus      |
 | `POST`   | `/tasks`              | Crée une tâche                                  |
 | `PUT`    | `/tasks/:id`          | Met à jour une tâche                            |
 | `DELETE` | `/tasks/:id`          | Met la tâche à la corbeille                     |

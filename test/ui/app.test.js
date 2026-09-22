@@ -1108,6 +1108,109 @@ describe('récurrence', () => {
   });
 });
 
+describe('modifier une série et son rappel', () => {
+  const ouvrir = (titre) => {
+    const ligne = [...document.querySelectorAll('#task-list li.task')].find((li) =>
+      li.textContent.includes(titre)
+    );
+    ligne.querySelector('.edit').click();
+  };
+
+  const enregistrer = async () => {
+    document.getElementById('save-edit').click();
+    await settle();
+    return server.calls.find((c) => c.method === 'PUT');
+  };
+
+  test('la fenêtre reprend la récurrence et le rappel de la tâche', async () => {
+    server.tasks = [
+      task('Loyer', {
+        dueDate: '2026-10-05T07:00:00.000Z',
+        recurrence: { freq: 'monthly', interval: 1, until: null },
+        reminder: { offset: '1d', at: null, sentAt: null },
+      }),
+    ];
+    await boot();
+    ouvrir('Loyer');
+
+    expect(document.getElementById('edit-recurrence').value).toBe('monthly');
+    expect(document.getElementById('edit-reminder').value).toBe('1d');
+  });
+
+  test('arrêter une série se fait sans la supprimer', async () => {
+    server.tasks = [
+      task('Loyer', {
+        dueDate: '2026-10-05T07:00:00.000Z',
+        recurrence: { freq: 'monthly', interval: 1, until: null },
+      }),
+    ];
+    await boot();
+    ouvrir('Loyer');
+    document.getElementById('edit-recurrence').value = '';
+
+    const envoi = await enregistrer();
+    expect(envoi.body.recurrence).toEqual({ freq: '', interval: 1, until: null });
+  });
+
+  test('garder la même fréquence ne perd ni l’intervalle ni la fin de série', async () => {
+    // « toutes les 2 semaines jusqu'en décembre » n'a pas de case dans le menu :
+    // enregistrer un titre corrigé ne doit pas la ramener à « chaque semaine »
+    const recurrence = { freq: 'weekly', interval: 2, until: '2026-12-31T00:00:00.000Z' };
+    server.tasks = [task('Filtre', { dueDate: '2026-10-05T07:00:00.000Z', recurrence })];
+    await boot();
+    ouvrir('Filtre');
+    document.getElementById('edit-title').value = 'Filtre à café';
+
+    const envoi = await enregistrer();
+    expect(envoi.body.recurrence).toEqual(recurrence);
+  });
+
+  test('poser un rappel depuis la fenêtre', async () => {
+    server.tasks = [task('Dentiste', { dueDate: '2026-10-05T07:00:00.000Z' })];
+    await boot();
+    ouvrir('Dentiste');
+    document.getElementById('edit-reminder').value = '1h';
+
+    const envoi = await enregistrer();
+    expect(envoi.body.reminder).toEqual({ offset: '1h' });
+  });
+
+  test('vider l’échéance vide et verrouille récurrence et rappel', async () => {
+    server.tasks = [
+      task('Loyer', {
+        dueDate: '2026-10-05T07:00:00.000Z',
+        recurrence: { freq: 'monthly', interval: 1, until: null },
+        reminder: { offset: '1d', at: null, sentAt: null },
+      }),
+    ];
+    await boot();
+    ouvrir('Loyer');
+
+    const date = document.getElementById('edit-due-date');
+    date.value = '';
+    date.dispatchEvent(new Event('input', { bubbles: true }));
+
+    const serie = document.getElementById('edit-recurrence');
+    const rappel = document.getElementById('edit-reminder');
+    expect(serie.disabled).toBe(true);
+    expect(rappel.disabled).toBe(true);
+
+    // sans quoi le serveur refuserait l'enregistrement entier
+    const envoi = await enregistrer();
+    expect(envoi.body.recurrence.freq).toBe('');
+    expect(envoi.body.reminder).toEqual({ offset: '' });
+  });
+
+  test('une tâche sans échéance ouvre la fenêtre avec les deux champs verrouillés', async () => {
+    server.tasks = [task('Libre')];
+    await boot();
+    ouvrir('Libre');
+
+    expect(document.getElementById('edit-recurrence').disabled).toBe(true);
+    expect(document.getElementById('edit-reminder').disabled).toBe(true);
+  });
+});
+
 describe('rappels', () => {
   test('une tâche avec rappel porte un pictogramme', async () => {
     server.tasks = [task('Dentiste', { reminder: { offset: '1h', at: null, sentAt: null } })];

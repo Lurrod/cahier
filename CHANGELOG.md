@@ -21,6 +21,11 @@ des postes déjà installés.
 semaines` : l'aperçu montre la répétition comprise, et l'échéance est posée
   d'office sur la prochaine occurrence, puisqu'une série a besoin d'une date
   pour avancer. Un choix fait dans le menu l'emporte toujours sur le texte.
+- **La fenêtre « Modifier » règle aussi la récurrence et le rappel.** Jusqu'ici
+  ils ne se choisissaient qu'à la création : arrêter une série demandait de
+  supprimer la tâche, et un rappel oublié ne pouvait plus être ajouté. Une
+  série « toutes les 2 semaines » garde son rythme quand on ne corrige que le
+  titre.
 
 ## [3.2.0] — 2026-09-18
 

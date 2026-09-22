@@ -104,7 +104,8 @@ tant que `CORS_ORIGIN` n'est pas défini.
   étapes, la corbeille emporte et rend la famille entière
 - **Récurrence** : quotidienne, jours ouvrés, hebdomadaire, mensuelle ou annuelle — cocher une occurrence crée
   immédiatement la suivante, calée sur l'échéance précédente (donc sans dérive en cas de
-  retard) ; les étapes sont reprises, décochées
+  retard) ; les étapes sont reprises, décochées. Elle se change ou s'arrête depuis « Modifier »,
+  comme le rappel
 - **Étiquettes** : plusieurs mots-clés transversaux par tâche (`+maison` en saisie rapide),
   cliquables pour filtrer — la catégorie reste le classement principal, unique et coloré
 - **Ordre manuel** : tri « manuel » et glisser-déposer — un déplacement ne produit qu'une

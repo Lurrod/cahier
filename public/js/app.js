@@ -14,6 +14,7 @@ import { initMisesAJour } from './maj.js';
 import { bindBackdrop, closeModal, openModal } from './modal.js';
 import { initPalette } from './palette.js';
 import { parseQuickEntry } from './parse.js';
+import { lierAEcheance, recurrenceModifiee } from './serie.js';
 import { initPreferences } from './preferences.js';
 import { initReglages } from './reglages.js';
 import { resetSteps, toggleSteps } from './steps.js';
@@ -82,6 +83,8 @@ const editDesc = $('edit-desc');
 const editDueDate = $('edit-due-date');
 const editCategory = $('edit-category');
 const editPriority = $('edit-priority');
+const editRecurrence = $('edit-recurrence');
+const editReminder = $('edit-reminder');
 const saveEditBtn = $('save-edit');
 const closeEditModalBtn = $('close-modal');
 
@@ -424,6 +427,9 @@ const renderTaskItem = (task) => {
     editDueDate.value = toLocalDatetimeInput(task.dueDate);
     editCategory.value = task.category || '';
     editPriority.value = task.priority || '';
+    editRecurrence.value = task.recurrence?.freq || '';
+    editReminder.value = task.reminder?.offset || '';
+    syncEditDependentFields();
     openModal(editModal);
   });
 
@@ -569,22 +575,11 @@ const renderQuickPreview = () => {
 
 taskTitleInput.addEventListener('input', renderQuickPreview);
 
-/**
- * Récurrence et rappel n'ont de sens qu'avec une échéance : ils la suivent. Une
- * seule fonction gouverne l'état des deux champs pour ne pas dupliquer la règle.
- */
-const syncDueDependentFields = () => {
-  const avecDate = taskDueInput.value !== '';
-  [taskRecurrenceInput, taskReminderInput].forEach((field) => {
-    field.disabled = !avecDate;
-    // un champ désactivé doit aussi être vidé, sinon le serveur refuserait une
-    // récurrence ou un rappel sans échéance à l'appui
-    if (!avecDate) field.value = '';
-  });
-};
-
-taskDueInput.addEventListener('input', syncDueDependentFields);
-syncDueDependentFields();
+const syncDueDependentFields = lierAEcheance(taskDueInput, [
+  taskRecurrenceInput,
+  taskReminderInput,
+]);
+const syncEditDependentFields = lierAEcheance(editDueDate, [editRecurrence, editReminder]);
 
 /** Vide le composeur sans toucher au tri, qui vit dans le même <form>. */
 const clearComposer = () => {
@@ -690,6 +685,7 @@ initFilters({
 
 saveEditBtn.addEventListener('click', async () => {
   if (!state.currentTaskId) return;
+  const current = state.tasks.find((t) => t._id === state.currentTaskId);
   try {
     await api.updateTask(state.currentTaskId, {
       title: editTitle.value.trim(),
@@ -697,6 +693,8 @@ saveEditBtn.addEventListener('click', async () => {
       dueDate: toIso(editDueDate.value),
       category: editCategory.value,
       priority: editPriority.value,
+      recurrence: recurrenceModifiee(editRecurrence.value, current?.recurrence),
+      reminder: { offset: editReminder.value },
     });
     closeModal(editModal);
     await refresh();

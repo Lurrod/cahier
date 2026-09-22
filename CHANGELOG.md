@@ -27,6 +27,13 @@ semaines` : l'aperçu montre la répétition comprise, et l'échéance est posé
   série « toutes les 2 semaines » garde son rythme quand on ne corrige que le
   titre.
 
+### Corrigé
+
+- **Un rappel déjà parti ne repart plus quand on modifie la tâche.** Enregistrer
+  depuis « Modifier », même pour corriger une faute dans le titre, remettait le
+  rappel à zéro : la notification Windows réapparaissait dans la minute.
+  Déplacer l'échéance ou changer le réglage du rappel le réarme toujours.
+
 ## [3.2.0] — 2026-09-18
 
 ### Modifié

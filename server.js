@@ -467,13 +467,20 @@ const regenererRecurrence = async (task) => {
  * `at` est stocké plutôt que calculé à la lecture : le balayage doit rester
  * une requête indexée triviale, pas une arithmétique de dates en base.
  */
-const poserHeureDeRappel = (apres) => {
+const poserHeureDeRappel = (apres, avant = null) => {
   const offset = apres?.reminder?.offset || '';
+  const at = remindAtFor(apres?.dueDate, offset);
+  // un rappel qui retombe à la même heure est le même rappel : la fenêtre
+  // « Modifier » renvoie toujours échéance et réglage, et corriger un titre
+  // ne doit pas refaire partir une notification déjà affichée
+  const inchange =
+    avant?.reminder?.offset === offset &&
+    new Date(avant?.reminder?.at ?? 0).getTime() === new Date(at ?? 0).getTime();
   return {
     offset,
-    at: remindAtFor(apres?.dueDate, offset),
+    at,
     // un réglage qui change remet le compteur : le nouveau rappel doit partir
-    sentAt: null,
+    sentAt: inchange ? (avant.reminder.sentAt ?? null) : null,
   };
 };
 
@@ -906,7 +913,7 @@ app.put('/tasks/:id', async (req, res) => {
     // l'heure du rappel dépend de l'échéance ET du réglage : toucher à l'une
     // ou à l'autre la refait
     if (Object.hasOwn(champs, 'reminder') || Object.hasOwn(champs, 'dueDate')) {
-      champs.reminder = poserHeureDeRappel({ ...avant, ...champs });
+      champs.reminder = poserHeureDeRappel({ ...avant, ...champs }, avant);
     }
 
     const task = await Task.findOneAndUpdate({ _id: req.params.id, deletedAt: null }, champs, {

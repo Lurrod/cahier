@@ -1693,6 +1693,42 @@ describe('Rappels', () => {
     expect(envoyees[0].message).toContain('Trois');
   });
 
+  test('enregistrer sans toucher à l’échéance ni au rappel ne le refait pas partir', async () => {
+    // la fenêtre « Modifier » renvoie toujours échéance et rappel, même
+    // inchangés : corriger une faute dans le titre ne doit pas redéclencher
+    // une notification déjà affichée
+    const creee = await request(app)
+      .post('/tasks')
+      .send({ title: 'Dentiste', dueDate: dans(-30), reminder: { offset: 'atDue' } });
+    const { envoyees, envoyer } = collecteur();
+    await sweepReminders({ now: new Date(), envoyer });
+
+    await request(app)
+      .put(`/tasks/${creee.body._id}`)
+      .send({
+        title: 'Dentiste (Dr Martin)',
+        dueDate: creee.body.dueDate,
+        reminder: { offset: 'atDue' },
+      });
+    await sweepReminders({ now: new Date(), envoyer });
+
+    expect(envoyees).toHaveLength(1);
+  });
+
+  test('déplacer l’échéance d’un rappel déjà parti le réarme', async () => {
+    const creee = await request(app)
+      .post('/tasks')
+      .send({ title: 'Dentiste', dueDate: dans(-30), reminder: { offset: 'atDue' } });
+    const { envoyees, envoyer } = collecteur();
+    await sweepReminders({ now: new Date(), envoyer });
+
+    const res = await request(app)
+      .put(`/tasks/${creee.body._id}`)
+      .send({ dueDate: dans(120) });
+
+    expect(res.body.reminder.sentAt).toBeNull();
+  });
+
   test('un rappel oublié depuis plus de sept jours est marqué sans rien afficher', async () => {
     const vieux = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const creee = await request(app)

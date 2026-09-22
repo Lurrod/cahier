@@ -14,6 +14,7 @@ import { initMisesAJour } from './maj.js';
 import { bindBackdrop, closeModal, openModal } from './modal.js';
 import { initPalette } from './palette.js';
 import { parseQuickEntry } from './parse.js';
+import { reporter } from './report.js';
 import { lierAEcheance, recurrenceModifiee } from './serie.js';
 import { initPreferences } from './preferences.js';
 import { initReglages } from './reglages.js';
@@ -247,6 +248,18 @@ const toggleTask = async (task, completed) => {
   await refresh({ silent: true });
 };
 
+/** Fait glisser l'échéance — au lendemain, ou au lundi qui vient. */
+const postponeTask = async (task, cible) => {
+  const dueDate = reporter(task.dueDate, cible);
+  try {
+    await api.updateTask(task._id, { dueDate });
+    toast(`Reportée · ${formatDate(dueDate)}`, 'success');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+  await refresh({ silent: true });
+};
+
 /** Suppression immédiate, réparable tant que la note « Annuler » est affichée. */
 const removeTask = async (task) => {
   state = { ...state, tasks: state.tasks.filter((t) => t._id !== task._id) };
@@ -374,6 +387,13 @@ const renderTaskItem = (task) => {
     metaParts.push(
       `<span class="task-due${cls}">${escapeHtml(label)} · ${escapeHtml(formattedDate)}</span>`
     );
+    // le retard se trie d'un geste : l'ouvrir dans « Modifier » pour retaper
+    // une date est exactement la friction qui fait s'accumuler les retards
+    if (status === 'overdue' && !task.completed) {
+      metaParts.push(
+        `<button type="button" class="task-postpone" title="Reporter à demain (r)">→ demain</button>`
+      );
+    }
   }
   if (task.childCount > 0) {
     metaParts.push(
@@ -434,6 +454,8 @@ const renderTaskItem = (task) => {
   });
 
   li.querySelector('.delete').addEventListener('click', () => removeTask(task));
+
+  li.querySelector('.task-postpone')?.addEventListener('click', () => postponeTask(task, 'demain'));
 
   li.querySelectorAll('.task-tag').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -742,6 +764,7 @@ const { applyCursor } = initKeyboard({
   },
   toggleTask,
   removeTask,
+  postponeTask,
   openPalette,
   closePalette,
   focusSearch: () => searchInput.focus(),

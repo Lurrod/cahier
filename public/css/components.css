@@ -764,6 +764,23 @@
   color: var(--ink-soft);
 }
 
+/* au stylo rouge, comme le retard qu'il vient réparer — mais sans cadre : un
+   geste d'appoint, pas un troisième bouton d'action */
+.task-postpone {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  color: var(--red-pen);
+  cursor: pointer;
+}
+
+.task-postpone:hover,
+.task-postpone:focus-visible {
+  text-decoration: underline;
+}
+
 /* ----------------------------- glisser-déposer ---------------------------- */
 
 .task[draggable='true'] {

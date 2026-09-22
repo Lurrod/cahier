@@ -17,6 +17,7 @@ const taskList = $('task-list');
  *   setState: (patch: {cursor?: number}) => void,
  *   toggleTask: (task: object, completed: boolean) => Promise<void>,
  *   removeTask: (task: object) => Promise<void>,
+ *   postponeTask: (task: object, cible: 'demain'|'semaine') => Promise<void>,
  *   openPalette: () => void,
  *   closePalette: () => void,
  *   focusSearch: () => void,
@@ -30,6 +31,7 @@ export const initKeyboard = ({
   setState,
   toggleTask,
   removeTask,
+  postponeTask,
   openPalette,
   closePalette,
   focusSearch,
@@ -106,6 +108,14 @@ export const initKeyboard = ({
         if (cursorTask) {
           e.preventDefault();
           taskList.querySelectorAll('.task .edit')[getState().cursor]?.click();
+        }
+        break;
+      case 'r':
+      case 'R':
+        if (cursorTask) {
+          e.preventDefault();
+          // la majuscule pousse plus loin : lundi plutôt que demain
+          postponeTask(cursorTask, e.key === 'R' ? 'semaine' : 'demain');
         }
         break;
       case 'Delete':

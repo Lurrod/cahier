@@ -122,8 +122,11 @@ tant que `CORS_ORIGIN` n'est pas défini.
   qui a été compris avant validation — la récurrence aussi : `Poubelles tous les mardis`,
   `Loyer chaque mois`, `Standup chaque jour ouvré 9h30`, `Filtre toutes les 2 semaines`
 - **Corbeille** consultable : restaurer ou supprimer définitivement (en deux clics)
+- **Reporter** : une tâche en retard porte « → demain » ; au clavier, `r` la repousse au
+  lendemain et `R` au lundi qui vient, à la même heure. Une tâche à venir glisse depuis sa
+  propre échéance — reporter n'avance jamais rien
 - **Clavier** : `n` saisir · `/` chercher · `j`/`k` naviguer · `x` cocher · `e` modifier ·
-  `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
+  `r`/`R` reporter · `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
 - **Réglages** : apparence (densité, taille du texte, grain du papier, traits au
   crayon), vue d'ouverture (statut, échéance, tri) et mise à jour. Ils vivent
   dans la base, comme le reste ; l'apparence est en plus mise en miroir dans le

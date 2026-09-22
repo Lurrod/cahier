@@ -26,6 +26,10 @@ semaines` : l'aperçu montre la répétition comprise, et l'échéance est posé
   supprimer la tâche, et un rappel oublié ne pouvait plus être ajouté. Une
   série « toutes les 2 semaines » garde son rythme quand on ne corrige que le
   titre.
+- **Reporter une tâche d'un geste.** Une tâche en retard porte « → demain » ;
+  au clavier, `r` repousse la tâche sélectionnée au lendemain et `R` au lundi
+  qui vient, en gardant son heure. Trier ses retards ne demande plus d'ouvrir
+  « Modifier » et de retaper une date.
 
 ### Corrigé
 

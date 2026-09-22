@@ -1108,6 +1108,76 @@ describe('récurrence', () => {
   });
 });
 
+describe('reporter', () => {
+  const press = (key, options = {}) =>
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...options }));
+
+  const hier = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    d.setHours(14, 30, 0, 0);
+    return d.toISOString();
+  };
+
+  const envoi = () => server.calls.find((c) => c.method === 'PUT');
+
+  test('r reporte la tâche sélectionnée à demain, à son heure', async () => {
+    server.tasks = [task('Relancer', { dueDate: hier() })];
+    await boot();
+    press('j');
+    press('r');
+    await settle();
+
+    const demain = new Date();
+    demain.setDate(demain.getDate() + 1);
+    const recu = new Date(envoi().body.dueDate);
+    expect(recu.getDate()).toBe(demain.getDate());
+    expect(recu.getHours()).toBe(14);
+    expect(recu.getMinutes()).toBe(30);
+    // le corps ne porte que l'échéance : rien d'autre ne doit bouger
+    expect(Object.keys(envoi().body)).toEqual(['dueDate']);
+  });
+
+  test('R reporte la tâche sélectionnée au lundi qui vient', async () => {
+    server.tasks = [task('Relancer', { dueDate: hier() })];
+    await boot();
+    press('j');
+    press('R', { shiftKey: true });
+    await settle();
+
+    expect(new Date(envoi().body.dueDate).getDay()).toBe(1);
+  });
+
+  test('sans sélection, r ne fait rien', async () => {
+    server.tasks = [task('Relancer', { dueDate: hier() })];
+    await boot();
+    press('r');
+    await settle();
+
+    expect(envoi()).toBeUndefined();
+  });
+
+  test('une tâche en retard offre « → demain » d’un clic', async () => {
+    server.tasks = [task('Relancer', { dueDate: hier() }), task('Sans date')];
+    await boot();
+
+    const boutons = document.querySelectorAll('.task-postpone');
+    // seulement sur la tâche en retard : ailleurs le bouton serait du bruit
+    expect(boutons).toHaveLength(1);
+
+    boutons[0].click();
+    await settle();
+    expect(envoi().url).toBe('/tasks/id-Relancer');
+  });
+
+  test('une tâche terminée n’offre pas de report', async () => {
+    server.tasks = [task('Faite', { dueDate: hier(), completed: true })];
+    await boot();
+
+    expect(document.querySelector('.task-postpone')).toBeNull();
+  });
+});
+
 describe('modifier une série et son rappel', () => {
   const ouvrir = (titre) => {
     const ligne = [...document.querySelectorAll('#task-list li.task')].find((li) =>

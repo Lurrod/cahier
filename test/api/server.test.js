@@ -1343,6 +1343,74 @@ describe('Replanifier en bloc', () => {
   });
 });
 
+describe('Ma journée', () => {
+  const creer = async (extra) => (await request(app).post('/tasks').send(extra)).body;
+  const titres = async (requete) =>
+    (await request(app).get(`/tasks?limit=50&${requete}`)).body.tasks.map((t) => t.title).sort();
+
+  const hier = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString();
+  };
+
+  test('une tâche se pose dans la journée et s’en retire', async () => {
+    const t = await creer({ title: 'Appeler maman' });
+
+    const pose = await request(app)
+      .put(`/tasks/${t._id}`)
+      .send({ myDay: new Date().toISOString() });
+    expect(pose.status).toBe(200);
+    expect(pose.body.myDay).not.toBeNull();
+
+    const retire = await request(app).put(`/tasks/${t._id}`).send({ myDay: null });
+    expect(retire.body.myDay).toBeNull();
+  });
+
+  test('due=myday ne montre que ce qui a été choisi aujourd’hui', async () => {
+    const choisie = await creer({ title: 'Choisie' });
+    const veille = await creer({ title: 'Choisie hier' });
+    await creer({ title: 'Ignorée' });
+    await request(app).put(`/tasks/${choisie._id}`).send({ myDay: new Date().toISOString() });
+    await request(app).put(`/tasks/${veille._id}`).send({ myDay: hier() });
+
+    // la journée se vide d'elle-même le lendemain : rien à nettoyer
+    expect(await titres('due=myday')).toEqual(['Choisie']);
+  });
+
+  test('les statistiques comptent ce qui reste à faire dans la journée', async () => {
+    const a = await creer({ title: 'A' });
+    const b = await creer({ title: 'B' });
+    const maintenant = new Date().toISOString();
+    await request(app).put(`/tasks/${a._id}`).send({ myDay: maintenant });
+    await request(app).put(`/tasks/${b._id}`).send({ myDay: maintenant, completed: true });
+
+    const stats = await request(app).get('/tasks/stats');
+
+    expect(stats.body.myDay).toBe(1);
+  });
+
+  test('une date illisible est refusée', async () => {
+    const t = await creer({ title: 'A' });
+    const res = await request(app).put(`/tasks/${t._id}`).send({ myDay: 'tout à l’heure' });
+    expect(res.status).toBe(400);
+  });
+
+  test('l’occurrence suivante d’une série ne naît pas dans la journée', async () => {
+    const demain = new Date();
+    demain.setDate(demain.getDate() + 1);
+    const t = await creer({
+      title: 'Arroser',
+      dueDate: demain.toISOString(),
+      recurrence: { freq: 'daily', interval: 1, until: null },
+    });
+    await request(app).put(`/tasks/${t._id}`).send({ myDay: new Date().toISOString() });
+    await request(app).put(`/tasks/${t._id}`).send({ completed: true });
+
+    expect(await titres('due=myday&status=active')).toEqual([]);
+  });
+});
+
 describe('Récurrence', () => {
   const dans = (jours, heure = 9) => {
     const d = new Date();

@@ -11,6 +11,7 @@ import { $ } from './util.js';
 const filterPills = [...document.querySelectorAll('.pill[data-filter]')];
 const duePills = [...document.querySelectorAll('.due-pill')];
 const dueOverdueCount = $('due-overdue-count');
+const dueMyDayCount = $('due-myday-count');
 
 /** Marque une pastille comme seule active de sa rangée. */
 const activatePill = (pills, target) => {
@@ -24,19 +25,26 @@ const activatePill = (pills, target) => {
   });
 };
 
-/** Reporte le nombre de tâches en retard sur le badge et la pastille. */
-export const showOverdueCount = (count) => {
-  dueOverdueCount.textContent = count;
-  dueOverdueCount.hidden = count === 0;
+/** Reporte un compte sur le badge d'une pastille, et sur son nom accessible. */
+const showBadge = (due, badge, label, count) => {
+  badge.textContent = count;
+  badge.hidden = count === 0;
 
   // sans cela le nom accessible du bouton devient « En retard 3 », un nombre
   // posé là sans dire de quoi il parle
-  const overduePill = duePills.find((p) => p.dataset.due === 'overdue');
-  overduePill.setAttribute(
+  const pill = duePills.find((p) => p.dataset.due === due);
+  pill.setAttribute(
     'aria-label',
-    count === 0 ? 'En retard' : `En retard, ${count} tâche${count > 1 ? 's' : ''}`
+    count === 0 ? label : `${label}, ${count} tâche${count > 1 ? 's' : ''}`
   );
 };
+
+/** Reporte le nombre de tâches en retard sur le badge et la pastille. */
+export const showOverdueCount = (count) =>
+  showBadge('overdue', dueOverdueCount, 'En retard', count);
+
+/** Reporte ce qui reste à faire dans la journée sur sa pastille. */
+export const showMyDayCount = (count) => showBadge('myday', dueMyDayCount, 'Ma journée', count);
 
 /**
  * Accorde les deux rangées entre elles.

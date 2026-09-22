@@ -188,6 +188,10 @@ const taskSchema = new mongoose.Schema({
     until: { type: Date, default: null },
   },
 
+  // --- Ma journée : le jour où la tâche y a été mise. Une date plutôt qu'un
+  // booléen : la journée se vide d'elle-même le lendemain, sans tâche de fond
+  myDay: { type: Date, default: null },
+
   // --- vague 4 : rappels ---
   reminder: {
     offset: { type: String, enum: ['', 'atDue', '1h', '1d'], default: '' },
@@ -232,6 +236,7 @@ const CREATE_FIELDS = [
   'recurrence',
   'tags',
   'reminder',
+  'myDay',
 ];
 const UPDATE_FIELDS = [...CREATE_FIELDS, 'completed'];
 
@@ -298,6 +303,9 @@ const dueClause = (due, now = new Date()) => {
   if (due === 'today') return { dueDate: { $ne: null, $lt: addDays(start, 1) } };
   if (due === 'week') return { dueDate: { $ne: null, $lt: addDays(start, 7) } };
   if (due === 'none') return { dueDate: null };
+  // pas une échéance mais un choix du jour ; il vit dans la même rangée de
+  // pastilles, donc passe par le même paramètre
+  if (due === 'myday') return { myDay: { $ne: null, $gte: start } };
   return null;
 };
 
@@ -583,7 +591,7 @@ async function sweepReminders({ now = new Date(), envoyer = sendNotification } =
 /**
  * Migration au démarrage. Chaque clause ne vise que les documents à qui le
  * champ manque (`$exists: false`) : relancer le serveur ne réécrit donc rien,
- * et une base déjà à jour coûte quatre requêtes qui ne touchent aucune ligne.
+ * et une base déjà à jour coûte cinq requêtes qui ne touchent aucune ligne.
  *
  * `reminder` appartient à la vague 4 mais part ici : ajouter deux champs
  * connus en deux migrations successives double le risque pour rien.
@@ -600,6 +608,7 @@ async function migrateSchema() {
       { 'reminder.offset': { $exists: false } },
       { reminder: { offset: '', at: null, sentAt: null } },
     ],
+    [{ myDay: { $exists: false } }, { myDay: null }],
   ];
 
   for (const [cible, valeurs] of defauts) {
@@ -667,13 +676,14 @@ app.post('/tasks', async (req, res) => {
 app.get('/tasks/stats', async (req, res) => {
   try {
     const base = { deletedAt: null };
-    const [total, done, overdue, byCategory] = await Promise.all([
+    const [total, done, overdue, myDay, byCategory] = await Promise.all([
       Task.countDocuments(base),
       Task.countDocuments({ ...base, completed: true }),
       // une tâche terminée n'est plus un rappel, même si son échéance est passée.
       // dueClause est réutilisé tel quel : le badge et l'onglet « en retard »
       // ne peuvent pas diverger sur ce que « en retard » veut dire.
       Task.countDocuments({ ...base, completed: false, ...dueClause('overdue') }),
+      Task.countDocuments({ ...base, completed: false, ...dueClause('myday') }),
       Task.aggregate([{ $match: base }, { $group: { _id: '$category', count: { $sum: 1 } } }]),
     ]);
 
@@ -682,6 +692,7 @@ app.get('/tasks/stats', async (req, res) => {
       done,
       active: total - done,
       overdue,
+      myDay,
       byCategory: byCategory.map(({ _id, count }) => ({ category: _id || '', count })),
     });
   } catch (error) {

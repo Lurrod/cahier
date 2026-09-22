@@ -12,6 +12,12 @@ des postes déjà installés.
 
 ### Ajouté
 
+- **Ma journée.** Le ☀ d'une ligne, ou `m` au clavier, pose la tâche dans la
+  journée ; la pastille « Ma journée » ne montre qu'elles, avec le compte de ce
+  qui reste. On y choisit ce qu'on fera aujourd'hui, sans toucher aux
+  échéances. La liste se vide d'elle-même le lendemain : rien à nettoyer, et
+  ce qui n'a pas été fait reste dans le cahier, simplement plus dans la
+  journée. Le Cahier peut s'ouvrir directement dessus, dans les Réglages.
 - **Deux nouvelles récurrences : les jours ouvrés et l'année.** « Chaque jour
   ouvré » saute le week-end — un point du vendredi revient le lundi. « Chaque
   année » sert aux anniversaires, aux échéances d'assurance, à la déclaration

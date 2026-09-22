@@ -764,6 +764,31 @@
   color: var(--ink-soft);
 }
 
+/* le soleil de « Ma journée » : éteint, un simple contour à l'encre pâle ;
+   allumé, passé au surligneur — la ligne du jour se repère d'un coup d'œil */
+.task-myday {
+  border: 0;
+  background: none;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  filter: grayscale(1);
+  cursor: pointer;
+}
+
+.task-myday:hover,
+.task-myday:focus-visible {
+  color: var(--ink);
+  filter: none;
+}
+
+.task-myday.is-on {
+  background: color-mix(in srgb, var(--highlighter) 70%, transparent);
+  filter: none;
+}
+
 /* une annotation de marge, pas une ligne de plus : elle explique, elle ne compte pas */
 .task-matched-steps {
   margin: 0.2rem 0 0;

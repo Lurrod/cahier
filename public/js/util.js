@@ -130,3 +130,7 @@ export const toast = (message, variant = 'info', action = null) => {
   sketchAll(el);
   timer = setTimeout(dismiss, action ? TOAST_ACTION_MS : TOAST_MS);
 };
+
+/** Vrai si la date tombe aujourd'hui, en heure locale. */
+export const isToday = (value, now = new Date()) =>
+  Boolean(value) && new Date(value).toDateString() === now.toDateString();

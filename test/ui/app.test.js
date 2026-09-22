@@ -1119,6 +1119,100 @@ describe('récurrence', () => {
   });
 });
 
+describe('ma journée', () => {
+  const aujourdhui = () => new Date().toISOString();
+  const hier = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString();
+  };
+  const envoi = () => server.calls.find((c) => c.method === 'PUT' && c.url.startsWith('/tasks/'));
+  const press = (key) =>
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  const lastListUrl = () =>
+    server.calls
+      .map((c) => c.url)
+      .filter((u) => u.startsWith('/tasks?'))
+      .pop();
+
+  test('la pastille « Ma journée » relance la liste sur ce qui a été choisi', async () => {
+    await boot();
+    server.calls = [];
+
+    document.querySelector('.due-pill[data-due="myday"]').click();
+    await settle();
+
+    const params = new URL(lastListUrl(), 'http://test').searchParams;
+    expect(params.get('due')).toBe('myday');
+  });
+
+  test('la pastille compte ce qui reste à faire dans la journée', async () => {
+    server.stats = { ...server.stats, myDay: 3 };
+    await boot();
+
+    const pill = document.querySelector('.due-pill[data-due="myday"]');
+    expect(document.getElementById('due-myday-count').textContent).toBe('3');
+    expect(pill.getAttribute('aria-label')).toBe('Ma journée, 3 tâches');
+  });
+
+  test('le soleil d’une ligne pose la tâche dans la journée', async () => {
+    server.tasks = [task('Appeler maman')];
+    await boot();
+
+    const soleil = document.querySelector('.task-myday');
+    expect(soleil.getAttribute('aria-pressed')).toBe('false');
+    soleil.click();
+    await settle();
+
+    const jour = new Date(envoi().body.myDay);
+    expect(jour.toDateString()).toBe(new Date().toDateString());
+  });
+
+  test('une tâche déjà choisie aujourd’hui s’en retire', async () => {
+    server.tasks = [task('Appeler maman', { myDay: aujourdhui() })];
+    await boot();
+
+    const soleil = document.querySelector('.task-myday');
+    expect(soleil.getAttribute('aria-pressed')).toBe('true');
+    soleil.click();
+    await settle();
+
+    expect(envoi().body).toEqual({ myDay: null });
+  });
+
+  test('un choix de la veille ne compte plus', async () => {
+    server.tasks = [task('Appeler maman', { myDay: hier() })];
+    await boot();
+
+    expect(document.querySelector('.task-myday').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  test('m pose la tâche sélectionnée dans la journée', async () => {
+    server.tasks = [task('Appeler maman')];
+    await boot();
+    press('j');
+    press('m');
+    await settle();
+
+    expect(envoi().body.myDay).not.toBeNull();
+  });
+
+  test('la palette ouvre la journée', async () => {
+    await boot();
+    server.calls = [];
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })
+    );
+    const input = document.getElementById('palette-input');
+    input.value = 'journée';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('#palette-list .palette-item').click();
+    await settle();
+
+    expect(new URL(lastListUrl(), 'http://test').searchParams.get('due')).toBe('myday');
+  });
+});
+
 describe('reporter tous les retards', () => {
   const ilYA = (jours) => {
     const d = new Date();

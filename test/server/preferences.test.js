@@ -7,6 +7,12 @@ describe('normaliserPreferences', () => {
     expect(normaliserPreferences('pas un objet')).toEqual(DEFAUTS);
   });
 
+  test('le Cahier peut s’ouvrir sur Ma journée', () => {
+    const prefs = normaliserPreferences({ ouverture: { horizon: 'myday' } });
+
+    expect(prefs.ouverture.horizon).toBe('myday');
+  });
+
   test('garde une valeur reconnue', () => {
     const prefs = normaliserPreferences({ apparence: { densite: 'compact' } });
 

@@ -18,6 +18,7 @@ const taskList = $('task-list');
  *   toggleTask: (task: object, completed: boolean) => Promise<void>,
  *   removeTask: (task: object) => Promise<void>,
  *   postponeTask: (task: object, cible: 'demain'|'semaine') => Promise<void>,
+ *   toggleMyDay: (task: object) => Promise<void>,
  *   openPalette: () => void,
  *   closePalette: () => void,
  *   focusSearch: () => void,
@@ -32,6 +33,7 @@ export const initKeyboard = ({
   toggleTask,
   removeTask,
   postponeTask,
+  toggleMyDay,
   openPalette,
   closePalette,
   focusSearch,
@@ -116,6 +118,12 @@ export const initKeyboard = ({
           e.preventDefault();
           // la majuscule pousse plus loin : lundi plutôt que demain
           postponeTask(cursorTask, e.key === 'R' ? 'semaine' : 'demain');
+        }
+        break;
+      case 'm':
+        if (cursorTask) {
+          e.preventDefault();
+          toggleMyDay(cursorTask);
         }
         break;
       case 'Delete':

@@ -42,6 +42,7 @@ export const initPalette = ({
     { label: 'Nouvelle tâche', run: focusTitle },
     { label: 'Chercher', run: focusSearch },
     { label: 'Voir : tout', run: () => selectDue('all') },
+    { label: 'Voir : ma journée', run: () => selectDue('myday') },
     { label: 'Voir : en retard', run: () => selectDue('overdue') },
     { label: "Voir : aujourd'hui", run: () => selectDue('today') },
     { label: 'Voir : cette semaine', run: () => selectDue('week') },

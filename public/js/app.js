@@ -7,7 +7,13 @@
 import * as api from './api.js';
 import { appliquerApparence, restaurerApparence } from './apparence.js';
 import { initDragDrop } from './dragdrop.js';
-import { accorderOuverture, appliquerOuverture, initFilters, showOverdueCount } from './filters.js';
+import {
+  accorderOuverture,
+  appliquerOuverture,
+  initFilters,
+  showMyDayCount,
+  showOverdueCount,
+} from './filters.js';
 import { initKeyboard } from './keyboard.js';
 import { telechargerSauvegarde } from './backup.js';
 import { initMisesAJour } from './maj.js';
@@ -36,6 +42,7 @@ import {
   dueStatus,
   escapeHtml,
   formatDate,
+  isToday,
   greetingForHour,
   safeColor,
   toIso,
@@ -248,6 +255,18 @@ const toggleTask = async (task, completed) => {
   await refresh({ silent: true });
 };
 
+/** Pose la tâche dans la journée, ou l'en retire si elle y est déjà. */
+const toggleMyDay = async (task) => {
+  const dedans = isToday(task.myDay);
+  try {
+    await api.updateTask(task._id, { myDay: dedans ? null : new Date().toISOString() });
+    toast(dedans ? 'Retirée de ma journée.' : 'Ajoutée à ma journée.', 'success');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+  await refresh({ silent: true });
+};
+
 /** Fait glisser l'échéance — au lendemain, ou au lundi qui vient. */
 const postponeTask = async (task, cible) => {
   const dueDate = reporter(task.dueDate, cible);
@@ -402,6 +421,13 @@ const priorityMark = (priority) => {
   return `<span class="task-prio" data-level="${priority}" role="img" aria-label="Priorité ${PRIORITY_LABELS[priority]}">*</span>`;
 };
 
+/** Le soleil de la ligne : allumé quand la tâche est dans la journée. */
+const myDayButton = (task) => {
+  const dedans = isToday(task.myDay);
+  const label = dedans ? 'Retirer de ma journée (m)' : 'Ajouter à ma journée (m)';
+  return `<button class="task-myday${dedans ? ' is-on' : ''}" type="button" aria-pressed="${dedans}" title="${label}" aria-label="${label}">☀</button>`;
+};
+
 /** Pourquoi un dossier répond à la recherche alors que son titre n'y est pas. */
 const matchedStepsNote = (titles) =>
   titles?.length
@@ -475,6 +501,7 @@ const renderTaskItem = (task) => {
       ${matchedStepsNote(task.matchedSteps)}
     </div>
     <div class="task-actions">
+      ${myDayButton(task)}
       <button class="btn edit" type="button" data-sketch="button" data-tone="neutral">Modifier</button>
       <button class="btn delete" type="button" data-sketch="button" data-tone="danger">Supprimer</button>
     </div>
@@ -498,6 +525,8 @@ const renderTaskItem = (task) => {
   });
 
   li.querySelector('.delete').addEventListener('click', () => removeTask(task));
+
+  li.querySelector('.task-myday').addEventListener('click', () => toggleMyDay(task));
 
   li.querySelector('.task-postpone')?.addEventListener('click', () => postponeTask(task, 'demain'));
 
@@ -597,6 +626,7 @@ const updateCounters = () => {
   }
 
   showOverdueCount(state.stats.overdue || 0);
+  showMyDayCount(state.stats.myDay || 0);
 };
 
 const updateGreeting = () => {
@@ -810,6 +840,7 @@ const { applyCursor } = initKeyboard({
   toggleTask,
   removeTask,
   postponeTask,
+  toggleMyDay,
   openPalette,
   closePalette,
   focusSearch: () => searchInput.focus(),

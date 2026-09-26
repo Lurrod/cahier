@@ -18,7 +18,8 @@
     "fetch:mongod": "node scripts/fetch-mongod.js",
     "predist": "node scripts/fetch-mongod.js",
     "prerelease": "node scripts/fetch-mongod.js",
-    "icons": "electron scripts/make-icons.js"
+    "icons": "electron scripts/make-icons.js",
+    "test:e2e": "playwright test"
   },
   "keywords": [],
   "author": "Titouan Borde",
@@ -35,6 +36,7 @@
     "mongoose": "^8.9.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@vitest/coverage-v8": "^4.1.11",
     "electron": "^32.3.3",
     "electron-builder": "^24.13.3",

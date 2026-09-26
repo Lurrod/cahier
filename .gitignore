@@ -9,3 +9,5 @@ resources/
 coverage/
 CLAUDE.md
 docs/
+test-results/
+playwright-report/

@@ -483,7 +483,10 @@ cahier/
 │   │   ├── layout.css      # Structure : en-tête, colonnes, marge du cahier
 │   │   └── components.css  # Panneaux, champs, tâches, modales, toasts
 │   └── js/
-│       ├── app.js          # État, rendu, événements, composeur
+│       ├── app.js          # État, rendu de la liste, branchements
+│       ├── composeur.js    # Saisie d'une tâche, saisie rapide et son aperçu
+│       ├── modifier.js     # Fenêtre « Modifier » : ouvrir, enregistrer, dupliquer
+│       ├── categories.js   # Liste de la marge, menus, ajout et suppression
 │       ├── api.js          # Client HTTP (tri, filtres et recherche en paramètres)
 │       ├── parse.js        # Saisie rapide (module pur, horloge injectable)
 │       ├── filters.js      # Pastilles de statut et d'échéance, invariant croisé
@@ -503,6 +506,8 @@ cahier/
 │       └── util.js         # Dates, échappement, toasts
 ├── lib/                    # Logique pure, testable sans base ni serveur
 │   ├── portable.js         # Forme de l'export, liste blanche d'import
+│   ├── donnees-routes.js   # Sauvegarde, import, exports Markdown, CSV et agenda
+│   ├── entrees.js          # Paramètres de requête ramenés à des chaînes sûres
 │   ├── formats.js          # Rendus Markdown et CSV
 │   ├── agenda.js           # Export iCalendar : échappement, pliage, RRULE
 │   ├── recurrence.js       # Échéance suivante d'une récurrente

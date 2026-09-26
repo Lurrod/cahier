@@ -18,27 +18,20 @@ import { initKeyboard } from './keyboard.js';
 import { telecharger, telechargerSauvegarde } from './backup.js';
 import { dessinerBilan, noteDuJour } from './bilan.js';
 import { initMisesAJour } from './maj.js';
-import { bindBackdrop, closeModal, openModal } from './modal.js';
+import { bindBackdrop } from './modal.js';
 import { initPalette } from './palette.js';
-import { parseQuickEntry } from './parse.js';
 import { reporter } from './report.js';
-import { lierAEcheance, recurrenceModifiee } from './serie.js';
 import { initPreferences } from './preferences.js';
 import { initReglages } from './reglages.js';
+import { initCategories } from './categories.js';
+import { initComposeur } from './composeur.js';
 import { dupliquer } from './dupliquer.js';
+import { initModifier } from './modifier.js';
 import { initSelection } from './selection.js';
 import { resetSteps, toggleSteps } from './steps.js';
 import { initTrash } from './trash.js';
 
-import {
-  progress,
-  resketch,
-  setCrayon,
-  setText,
-  sketchAll,
-  strike,
-  unsketchAll,
-} from './sketch.js';
+import { progress, setCrayon, setText, sketchAll, strike, unsketchAll } from './sketch.js';
 
 import {
   $,
@@ -48,8 +41,6 @@ import {
   isToday,
   greetingForHour,
   encreDeCategorie,
-  toIso,
-  toLocalDatetimeInput,
   toast,
 } from './util.js';
 
@@ -60,8 +51,6 @@ const PAGE_SIZE = 5;
  * réglages sont chargés avant la première liste, et peuvent changer ensuite.
  */
 const taillePage = () => Number.parseInt(preferences.valeurs()?.liste?.parPage, 10) || PAGE_SIZE;
-// un jeton, pas une couleur : le surligneur change d'encre avec le thème
-const HIGHLIGHTER = 'var(--highlighter)';
 const NEUTRAL_COLOR = 'var(--ink-faint)';
 const SEARCH_DEBOUNCE_MS = 150;
 const PRIORITY_LABELS = { high: 'haute', medium: 'moyenne', low: 'basse' };
@@ -82,44 +71,14 @@ const REMINDER_LABELS = {
   '1d': 'Rappel la veille',
 };
 
-const taskForm = $('task-form');
 const taskList = $('task-list');
 const taskTitleInput = $('task-title');
-const quickPreview = $('quick-preview');
-const taskDescInput = $('task-desc');
-const taskDueInput = $('task-due-date');
-const taskCategorySelect = $('task-category');
-const taskPrioritySelect = $('task-priority');
-const taskRecurrenceInput = $('task-recurrence');
-const taskReminderInput = $('task-reminder');
 const sortSelect = $('sort-select');
 const searchInput = $('search-input');
-
-const editModal = $('edit-modal');
-const editTitle = $('edit-title');
-const editDesc = $('edit-desc');
-const editDueDate = $('edit-due-date');
-const editCategory = $('edit-category');
-const editPriority = $('edit-priority');
-const editRecurrence = $('edit-recurrence');
-const editReminder = $('edit-reminder');
-const saveEditBtn = $('save-edit');
-const closeEditModalBtn = $('close-modal');
-
-const deleteCategoryModal = $('delete-category-modal');
-const confirmDeleteCategoryBtn = $('confirm-delete-category');
-const cancelDeleteCategoryBtn = $('cancel-delete-category');
-const deleteCategoryMessage = $('delete-category-message');
 
 const prevPageBtn = $('prev-page');
 const nextPageBtn = $('next-page');
 const pageInfo = $('page-info');
-
-const categoryForm = $('category-form');
-const categoryInput = $('category-input');
-const categoryColorInput = $('category-color-input');
-const addCategoryBtn = $('add-category-btn');
-const categoriesList = $('categories-list');
 
 const emptyState = $('empty-state');
 const skeletonList = $('loading-skeleton');
@@ -143,8 +102,6 @@ let state = {
   tag: '',
   categories: [],
   stats: { total: 0, done: 0, active: 0, overdue: 0, byCategory: [] },
-  currentTaskId: null,
-  categoryToDelete: null,
   cursor: -1,
 };
 
@@ -202,46 +159,9 @@ const refresh = async ({ page = state.currentPage, silent = false } = {}) => {
   }
 };
 
-const loadCategories = async () => {
-  try {
-    state = { ...state, categories: await api.listCategories() };
-    updateCategorySelects();
-  } catch (error) {
-    toast('Impossible de charger les catégories.', 'error');
-  }
-};
-
 /* ----------------------------------------------------------------------
    Actions
    ---------------------------------------------------------------------- */
-
-const addCategory = async (name, color) => {
-  if (state.categories.some((c) => c.name === name)) {
-    toast('Cette catégorie existe déjà.', 'error');
-    return;
-  }
-  try {
-    await api.createCategory(name, color);
-    await loadCategories();
-    await refresh({ silent: true });
-    toast(`Catégorie « ${name} » ajoutée.`, 'success');
-  } catch (error) {
-    toast(error.message, 'error');
-  }
-};
-
-const removeCategory = async (name) => {
-  try {
-    await api.deleteCategory(name);
-    if (state.category === name) state = { ...state, category: 'all' };
-    await loadCategories();
-    await refresh({ page: 1 });
-    closeModal(deleteCategoryModal);
-    toast('Catégorie supprimée.', 'success');
-  } catch (error) {
-    toast(error.message, 'error');
-  }
-};
 
 /** Bascule affichée immédiatement, puis confirmée par le serveur. */
 const toggleTask = async (task, completed) => {
@@ -359,75 +279,6 @@ const restoreTask = async (id) => {
    Rendu
    ---------------------------------------------------------------------- */
 
-const updateCategorySelects = () => {
-  [taskCategorySelect, editCategory].forEach((select) => {
-    const current = select.value;
-    select.innerHTML = '<option value="">Sans catégorie</option>';
-    state.categories.forEach((category) => {
-      const opt = document.createElement('option');
-      opt.value = category.name;
-      opt.textContent = category.name;
-      select.appendChild(opt);
-    });
-    if (current) select.value = current;
-    // la largeur du croquis est mesurée à l'attache : on redessine après coup
-    resketch(select.closest('[data-sketch="select"]'));
-  });
-};
-
-const categoryRow = (name, label, color, count) => {
-  const isActive = state.category === name;
-  const li = document.createElement('li');
-  li.className = 'cat-item';
-  li.dataset.category = name;
-  li.innerHTML = `
-    <span class="cat-dot" style="background: ${escapeHtml(color)}"></span>
-    <span class="cat-name"${isActive ? ` data-sketch="highlight" data-stroke="${HIGHLIGHTER}"` : ''}>${escapeHtml(label)}</span>
-    <span class="cat-count">${count}</span>
-    ${name === 'all' ? '' : `<button class="cat-delete" type="button" data-category="${escapeHtml(name)}" aria-label="Supprimer ${escapeHtml(name)}">×</button>`}
-  `;
-  return li;
-};
-
-const renderCategories = () => {
-  const counts = new Map(state.stats.byCategory.map(({ category, count }) => [category, count]));
-
-  unsketchAll(categoriesList);
-  categoriesList.innerHTML = '';
-  categoriesList.appendChild(
-    categoryRow('all', 'Toutes les tâches', NEUTRAL_COLOR, state.stats.total)
-  );
-  state.categories.forEach((category) => {
-    categoriesList.appendChild(
-      categoryRow(
-        category.name,
-        category.name,
-        encreDeCategorie(category.color, NEUTRAL_COLOR),
-        counts.get(category.name) || 0
-      )
-    );
-  });
-
-  categoriesList.querySelectorAll('.cat-item').forEach((item) => {
-    item.addEventListener('click', (e) => {
-      if (e.target.closest('.cat-delete')) return;
-      state = { ...state, category: item.dataset.category };
-      refresh({ page: 1 });
-    });
-  });
-
-  categoriesList.querySelectorAll('.cat-delete').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      state = { ...state, categoryToDelete: btn.dataset.category };
-      deleteCategoryMessage.textContent = `La catégorie « ${state.categoryToDelete} » sera retirée des tâches associées.`;
-      openModal(deleteCategoryModal);
-    });
-  });
-
-  sketchAll(categoriesList);
-};
-
 const priorityMark = (priority) => {
   if (!PRIORITY_LABELS[priority]) return '';
   return `<span class="task-prio" data-level="${priority}" role="img" aria-label="Priorité ${PRIORITY_LABELS[priority]}">*</span>`;
@@ -523,18 +374,7 @@ const renderTaskItem = (task) => {
     toggleTask(task, e.target.checked);
   });
 
-  li.querySelector('.edit').addEventListener('click', () => {
-    state = { ...state, currentTaskId: task._id };
-    editTitle.value = task.title || '';
-    editDesc.value = task.description || '';
-    editDueDate.value = toLocalDatetimeInput(task.dueDate);
-    editCategory.value = task.category || '';
-    editPriority.value = task.priority || '';
-    editRecurrence.value = task.recurrence?.freq || '';
-    editReminder.value = task.reminder?.offset || '';
-    syncEditDependentFields();
-    openModal(editModal);
-  });
+  li.querySelector('.edit').addEventListener('click', () => modifier.ouvrir(task));
 
   li.querySelector('.delete').addEventListener('click', () => removeTask(task));
 
@@ -613,7 +453,7 @@ const render = () => {
   prevPageBtn.disabled = state.currentPage <= 1;
   nextPageBtn.disabled = state.currentPage >= state.totalPages;
 
-  renderCategories();
+  categories.dessiner();
   updateGreeting();
   updateCounters();
 };
@@ -652,125 +492,6 @@ const updateGreeting = () => {
    Événements
    ---------------------------------------------------------------------- */
 
-/** Ce que le texte du champ titre contient en plus du titre lui-même. */
-const parseTitleInput = () =>
-  parseQuickEntry(taskTitleInput.value, {
-    categories: state.categories.map((c) => c.name),
-  });
-
-// dernier aperçu rendu : réécrire une zone aria-live à chaque frappe la ferait
-// crier pour rien
-let lastPreview = '';
-
-/** L'aperçu rend l'interprétation réfutable avant l'envoi. */
-const renderQuickPreview = () => {
-  const { tokens, dueDate } = parseTitleInput();
-  const chips = tokens.map(
-    ({ type, text }) =>
-      `<span class="chip" data-type="${escapeHtml(type)}">${escapeHtml(text)}</span>`
-  );
-
-  // « 8h » ne dit pas si l'échéance tombe aujourd'hui ou demain : la date
-  // résolue, elle, le dit — et c'est elle qui sera envoyée
-  const resolved = formatDate(dueDate);
-  if (resolved) {
-    chips.push(`<span class="chip" data-type="resolved">→ ${escapeHtml(resolved)}</span>`);
-  }
-
-  const html = chips.join('');
-  if (html === lastPreview) return;
-  lastPreview = html;
-  quickPreview.innerHTML = html;
-  quickPreview.hidden = chips.length === 0;
-};
-
-taskTitleInput.addEventListener('input', renderQuickPreview);
-
-const syncDueDependentFields = lierAEcheance(taskDueInput, [
-  taskRecurrenceInput,
-  taskReminderInput,
-]);
-const syncEditDependentFields = lierAEcheance(editDueDate, [editRecurrence, editReminder]);
-
-/** Vide le composeur sans toucher au tri, qui vit dans le même <form>. */
-const clearComposer = () => {
-  taskTitleInput.value = '';
-  taskDescInput.value = '';
-  taskDueInput.value = '';
-  taskCategorySelect.value = '';
-  taskPrioritySelect.value = '';
-  taskRecurrenceInput.value = '';
-  taskReminderInput.value = '';
-  syncDueDependentFields();
-};
-
-/**
- * La récurrence à envoyer : le menu l'emporte, comme pour les autres champs,
- * sinon ce que le titre a laissé lire (« tous les mardis »).
- */
-const composerRecurrence = (parsed) => {
-  if (taskRecurrenceInput.value) {
-    return { freq: taskRecurrenceInput.value, interval: 1, until: null };
-  }
-  return parsed.recurrence ? { ...parsed.recurrence, until: null } : undefined;
-};
-
-taskForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const parsed = parseTitleInput();
-  if (!parsed.title) {
-    // le champ n'est pas vide à l'écran : ne rien faire du tout serait un bug
-    // du point de vue de l'utilisateur
-    if (taskTitleInput.value.trim()) {
-      toast('Il faut un titre en plus des étiquettes.', 'error');
-    }
-    taskTitleInput.focus();
-    return;
-  }
-
-  try {
-    await api.createTask({
-      title: parsed.title,
-      description: taskDescInput.value.trim(),
-      // un choix fait à la souris l'emporte sur ce que le texte laisse deviner
-      dueDate: toIso(taskDueInput.value) || parsed.dueDate,
-      category: taskCategorySelect.value || parsed.category,
-      priority: taskPrioritySelect.value || parsed.priority,
-      tags: parsed.tags,
-      recurrence: composerRecurrence(parsed),
-      reminder: taskReminderInput.value ? { offset: taskReminderInput.value } : undefined,
-    });
-    clearComposer();
-    renderQuickPreview();
-    await refresh({ page: 1 });
-    toast('Tâche ajoutée.', 'success');
-  } catch (error) {
-    toast(error.message, 'error');
-  }
-});
-
-const submitCategoryForm = () => {
-  const name = categoryInput.value.trim();
-  const color = categoryColorInput.value || '#1f2f5c';
-  if (!name) {
-    categoryInput.focus();
-    return;
-  }
-  addCategory(name, color);
-  categoryInput.value = '';
-  categoryInput.focus();
-};
-
-categoryForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  submitCategoryForm();
-});
-
-addCategoryBtn.addEventListener('click', (e) => {
-  e.preventDefault();
-  submitCategoryForm();
-});
-
 sortSelect.addEventListener('change', (e) => {
   state = { ...state, sort: e.target.value };
   refresh({ page: 1 });
@@ -794,48 +515,6 @@ initFilters({
   refresh,
 });
 
-saveEditBtn.addEventListener('click', async () => {
-  if (!state.currentTaskId) return;
-  const current = state.tasks.find((t) => t._id === state.currentTaskId);
-  try {
-    await api.updateTask(state.currentTaskId, {
-      title: editTitle.value.trim(),
-      description: editDesc.value.trim(),
-      dueDate: toIso(editDueDate.value),
-      category: editCategory.value,
-      priority: editPriority.value,
-      recurrence: recurrenceModifiee(editRecurrence.value, current?.recurrence),
-      reminder: { offset: editReminder.value },
-    });
-    closeModal(editModal);
-    await refresh();
-    toast('Tâche modifiée.', 'success');
-  } catch (error) {
-    toast(error.message, 'error');
-  }
-});
-
-closeEditModalBtn.addEventListener('click', () => closeModal(editModal));
-
-/** Copie de la tâche ouverte : on ferme d'abord, la copie paraît dans la liste. */
-$('duplicate-edit').addEventListener('click', () => {
-  const task = state.tasks.find((t) => t._id === state.currentTaskId);
-  closeModal(editModal);
-  if (task) dupliquerTache(task);
-});
-
-confirmDeleteCategoryBtn.addEventListener('click', () => {
-  if (state.categoryToDelete) {
-    removeCategory(state.categoryToDelete);
-    state = { ...state, categoryToDelete: null };
-  }
-});
-
-cancelDeleteCategoryBtn.addEventListener('click', () => {
-  closeModal(deleteCategoryModal);
-  state = { ...state, categoryToDelete: null };
-});
-
 initDragDrop({
   taskList,
   moveTask: api.moveTask,
@@ -844,6 +523,31 @@ initDragDrop({
 });
 
 const { openTrash } = initTrash({ restoreTask });
+
+const categories = initCategories({
+  getState: () => state,
+  setState: (patch) => {
+    state = { ...state, ...patch };
+  },
+  api,
+  refresh,
+  toast,
+});
+
+initComposeur({
+  getCategories: () => state.categories,
+  createTask: api.createTask,
+  refresh,
+  toast,
+});
+
+const modifier = initModifier({
+  getTask: (id) => state.tasks.find((t) => t._id === id),
+  updateTask: api.updateTask,
+  refresh,
+  toast,
+  dupliquerTache: (task) => dupliquerTache(task),
+});
 
 const selection = initSelection({
   taskList,
@@ -973,7 +677,7 @@ const appliquerOuvertureReglee = (ouverture) => {
 (async () => {
   // les réglages et les catégories ensemble : les premiers décident de la vue
   // à demander, les secondes portent les couleurs que le rendu y lira
-  const [valeurs] = await Promise.all([preferences.charger(), loadCategories()]);
+  const [valeurs] = await Promise.all([preferences.charger(), categories.charger()]);
 
   appliquerOuvertureReglee(valeurs?.ouverture);
   await refresh({ page: 1 });

@@ -145,6 +145,8 @@ tant que `CORS_ORIGIN` n'est pas défini.
 - **Tri, filtres et recherche côté serveur** : ils portent sur toute la base, pas sur la page affichée
 - **Pagination** déterministe côté serveur — 5, 10, 20 ou 50 tâches par page (Réglages)
 - **Statistiques** live (total / faites / restantes, et compte par catégorie)
+- **Bilan** : sept barres sous la jauge disent ce qui a été rayé chaque jour de la
+  semaine, et le sous-titre salue le travail du jour
 - **États** : vide, chargement (skeleton), erreur (toast)
 - **Traits dessinés** : chaque montage produit un croquis unique qui frémit (« boil ») ; les tâches terminées sont barrées d'un trait de stylo, la catégorie active est surlignée, la jauge d'avancement est hachurée
 - **Accessibilité** : skip-link, focus visible, `aria-live`, `prefers-reduced-motion` (drawably fige alors le frémissement)
@@ -159,6 +161,7 @@ tant que `CORS_ORIGIN` n'est pas défini.
   "title": "string (requis, 120 caractères max)",
   "description": "string (500 max)",
   "completed": false,
+  "completedAt": "ISO date | null — le moment où elle a été rayée, pour le bilan",
   "createdAt": "ISO date",
   "dueDate": "ISO date | null",
   "category": "string (32 max)",
@@ -186,9 +189,11 @@ routes n'appliquent qu'une liste blanche de champs. Une suppression est douce �
 la tâche part à la corbeille, reste restaurable, et disparaît définitivement au
 démarrage suivant passé 7 jours.
 
-Les champs de structure (`parentId`, `tags`, `order`, `recurrence`, `reminder`, `myDay`) sont
-installés par une **migration idempotente au démarrage** : une base écrite avant leur
-existence les reçoit au premier lancement, et relancer le serveur ne réécrit rien.
+Les champs de structure (`parentId`, `tags`, `order`, `recurrence`, `reminder`, `myDay`,
+`completedAt`) sont installés par une **migration idempotente au démarrage** : une base
+écrite avant leur existence les reçoit au premier lancement, et relancer le serveur ne
+réécrit rien. Une tâche rayée avant l'existence de `completedAt` reçoit `null`, pas la date
+du jour : dater tout l'historique au jour de la migration ferait mentir le bilan.
 
 ---
 
@@ -234,9 +239,12 @@ existence les reçoit au premier lancement, et relancer le serveur ne réécrit 
 Réponse : `{ tasks, total, totalPages, currentPage }`. Le tri est toujours
 départagé par `_id`, sans quoi paginer pourrait répéter ou sauter des tâches.
 
-`GET /tasks/stats` renvoie `{ total, done, active, overdue, myDay, byCategory }` : `overdue`
-compte les tâches non terminées dont l'échéance est passée — c'est le nombre affiché
-sur l'onglet « en retard ».
+`GET /tasks/stats` renvoie `{ total, done, active, overdue, myDay, byCategory, bilan }` :
+`overdue` compte les tâches non terminées dont l'échéance est passée — c'est le nombre
+affiché sur l'onglet « en retard ». `bilan` vaut `{ aujourdhui, semaine }`, où `semaine`
+liste les sept derniers jours (`{ jour, n }`, du plus ancien à aujourd'hui, en jours du
+poste) : ce qui y a été rayé, étapes exclues — cocher un dossier coche ses étapes, et les
+compter ferait passer une tâche pour dix. Recocher une tâche déjà rayée garde sa date.
 
 `GET /tasks` ne renvoie que les **racines** : lister les étapes rendrait la pagination
 incohérente, une page de cinq pouvant n'afficher qu'un dossier et ses quatre étapes. Chaque
@@ -473,6 +481,7 @@ cahier/
 │       ├── reglages.js     # Page Réglages, dessinée depuis le schéma du serveur
 │       ├── apparence.js    # Densité, taille, grain, crayon — posés sur la racine
 │       ├── preferences.js  # Les réglages courants, détenus à un seul endroit
+│       ├── bilan.js        # Les sept barres de la semaine
 │       ├── maj.js          # Bandeau de mise à jour (n'ouvre que sur une version prête)
 │       ├── selection.js    # Sélection multiple et barre d'actions groupées
 │       ├── steps.js        # Étapes d'une tâche, dépliage et cache
@@ -489,6 +498,7 @@ cahier/
 │   ├── reminders.js        # Heure d'un rappel et texte groupé
 │   ├── notify.js           # Toast Windows (le seul module qui parle à l'OS)
 │   ├── sauvegarde-auto.js  # Copie quotidienne et rotation des sauvegardes
+│   ├── bilan.js            # Date de fin d'une tâche, comptes des sept jours
 │   ├── listen.js           # Mise à l'écoute tolérante au port occupé
 │   ├── preferences.js      # Schéma fermé des réglages : défauts et validation
 │   ├── preferences-depot.js # Le document unique des réglages, dans Mongo

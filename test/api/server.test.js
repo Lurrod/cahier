@@ -2134,3 +2134,118 @@ describe('Actions groupées', () => {
     expect(res.body.modified).toBe(1);
   });
 });
+
+describe('Bilan', () => {
+  const creer = async (title, extra = {}) =>
+    (
+      await request(app)
+        .post('/tasks')
+        .send({ title, ...extra })
+    ).body;
+  const bilan = async () => (await request(app).get('/tasks/stats')).body.bilan;
+  const lire = async (id) => (await request(app).get(`/tasks/${id}`)).body;
+
+  test('une tâche rayée reçoit sa date de fin, et compte pour aujourd’hui', async () => {
+    const tache = await creer('Relire le brief');
+
+    await request(app).put(`/tasks/${tache._id}`).send({ completed: true });
+
+    expect(new Date((await lire(tache._id)).completedAt).toDateString()).toBe(
+      new Date().toDateString()
+    );
+    const { aujourdhui, semaine } = await bilan();
+    expect(aujourdhui).toBe(1);
+    expect(semaine).toHaveLength(7);
+    expect(semaine.at(-1).n).toBe(1);
+  });
+
+  test('la décocher efface la date et la retire du bilan', async () => {
+    const tache = await creer('Relire le brief');
+    await request(app).put(`/tasks/${tache._id}`).send({ completed: true });
+
+    await request(app).put(`/tasks/${tache._id}`).send({ completed: false });
+
+    expect((await lire(tache._id)).completedAt).toBeNull();
+    expect((await bilan()).aujourdhui).toBe(0);
+  });
+
+  test('modifier une tâche rayée ne change pas le jour où elle l’a été', async () => {
+    const tache = await creer('Relire le brief');
+    await request(app).put(`/tasks/${tache._id}`).send({ completed: true });
+    const lundi = new Date(Date.now() - 3 * 86400000);
+    await mongoose.connection
+      .collection('tasks')
+      .updateOne({ title: 'Relire le brief' }, { $set: { completedAt: lundi } });
+
+    // « Modifier » renvoie completed: true avec le reste
+    await request(app)
+      .put(`/tasks/${tache._id}`)
+      .send({ title: 'Relire le brief v2', completed: true });
+
+    expect(new Date((await lire(tache._id)).completedAt).getTime()).toBe(lundi.getTime());
+    expect((await bilan()).aujourdhui).toBe(0);
+  });
+
+  test('rayer en lot date chaque tâche ; décocher en lot efface', async () => {
+    const a = await creer('A');
+    const b = await creer('B');
+
+    await request(app)
+      .post('/tasks/bulk')
+      .send({ ids: [a._id, b._id], action: 'complete' });
+    expect((await bilan()).aujourdhui).toBe(2);
+    expect((await lire(a._id)).completedAt).not.toBeNull();
+
+    await request(app)
+      .post('/tasks/bulk')
+      .send({ ids: [a._id, b._id], action: 'uncomplete' });
+    expect((await bilan()).aujourdhui).toBe(0);
+    expect((await lire(a._id)).completedAt).toBeNull();
+  });
+
+  test('les étapes ne gonflent pas le bilan', async () => {
+    // cocher un dossier coche ses étapes : les compter ferait passer une tâche
+    // pour dix
+    const dossier = await creer('Devis');
+    await creer('Étape 1', { parentId: dossier._id });
+    await creer('Étape 2', { parentId: dossier._id });
+
+    await request(app).put(`/tasks/${dossier._id}`).send({ completed: true });
+
+    expect((await bilan()).aujourdhui).toBe(1);
+  });
+
+  test('une tâche à la corbeille sort du bilan', async () => {
+    const tache = await creer('Relire le brief');
+    await request(app).put(`/tasks/${tache._id}`).send({ completed: true });
+
+    await request(app).delete(`/tasks/${tache._id}`);
+
+    expect((await bilan()).aujourdhui).toBe(0);
+  });
+
+  test('la migration ne prête aucune date aux tâches rayées avant elle', async () => {
+    const { migrateSchema } = require('../../server');
+    await mongoose.connection
+      .collection('tasks')
+      .insertOne({ title: 'Rayée jadis', completed: true, createdAt: new Date() });
+
+    await migrateSchema();
+
+    // inventer « aujourd'hui » gonflerait le premier bilan de tout l'historique
+    const migree = await mongoose.connection.collection('tasks').findOne({ title: 'Rayée jadis' });
+    expect(migree.completedAt).toBeNull();
+    expect((await bilan()).aujourdhui).toBe(0);
+  });
+
+  test('une sauvegarde rend la date de fin telle quelle', async () => {
+    const tache = await creer('Relire le brief');
+    await request(app).put(`/tasks/${tache._id}`).send({ completed: true });
+    const avant = (await lire(tache._id)).completedAt;
+    const sauvegarde = (await request(app).get('/export')).body;
+
+    await request(app).post('/import?mode=replace').set('X-Confirm', 'replace').send(sauvegarde);
+
+    expect((await lire(tache._id)).completedAt).toBe(avant);
+  });
+});

@@ -644,6 +644,65 @@ describe('tâches par page', () => {
   });
 });
 
+describe('bilan', () => {
+  /** Sept jours finissant aujourd'hui, avec les comptes donnés. */
+  const semaineDe = (comptes) =>
+    comptes.map((n, i) => {
+      const jour = new Date();
+      jour.setHours(0, 0, 0, 0);
+      jour.setDate(jour.getDate() - (6 - i));
+      return { jour: jour.toISOString(), n };
+    });
+
+  const avecBilan = (comptes) => {
+    server.stats = {
+      ...server.stats,
+      bilan: { aujourdhui: comptes.at(-1), semaine: semaineDe(comptes) },
+    };
+  };
+
+  test('sept barres, une par jour, la plus haute pour le jour le plus rempli', async () => {
+    avecBilan([1, 0, 4, 0, 0, 2, 2]);
+    await boot();
+
+    const barres = [...document.querySelectorAll('#bilan .bilan-barre')];
+    expect(barres).toHaveLength(7);
+    expect(barres[2].style.getPropertyValue('--hauteur')).toBe('100%');
+    expect(barres[1].style.getPropertyValue('--hauteur')).toBe('0%');
+    expect(barres.at(-1).classList.contains('is-today')).toBe(true);
+  });
+
+  test('se lit aussi sans les yeux', async () => {
+    avecBilan([1, 0, 4, 0, 0, 2, 3]);
+    await boot();
+
+    const label = document.getElementById('bilan-barres').getAttribute('aria-label');
+    expect(label).toMatch(/^Rayées ces sept derniers jours : /);
+    expect(label).toContain('aujourd’hui 3');
+  });
+
+  test('le sous-titre salue ce qui a été rayé aujourd’hui', async () => {
+    avecBilan([0, 0, 0, 0, 0, 0, 2]);
+    await boot();
+
+    expect(document.getElementById('subtitle').textContent).toContain('2 rayées aujourd’hui');
+  });
+
+  test('rien de rayé aujourd’hui : le sous-titre n’en parle pas', async () => {
+    avecBilan([3, 0, 0, 0, 0, 0, 0]);
+    await boot();
+
+    // « 0 rayée aujourd'hui » serait un reproche, pas un bilan
+    expect(document.getElementById('subtitle').textContent).not.toContain('aujourd’hui');
+  });
+
+  test('un serveur qui ne sait pas faire de bilan ne montre pas une semaine vide', async () => {
+    await boot();
+
+    expect(document.getElementById('bilan').hidden).toBe(true);
+  });
+});
+
 describe('thème', () => {
   test('la catégorie active est surlignée à l’encre du thème, pas d’un jaune figé', async () => {
     await boot();

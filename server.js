@@ -15,6 +15,7 @@ const { messageGroupe, poserHeureDeRappel, RETARD_MAX_MS } = require('./lib/remi
 const { lireReplanification, replanifier } = require('./lib/replanifier');
 const { sendNotification } = require('./lib/notify');
 const { sauvegarderSiBesoin } = require('./lib/sauvegarde-auto');
+const { dateDeFin, debutDuBilan, semaine } = require('./lib/bilan');
 const { listenWithFallback } = require('./lib/listen');
 const { creerDepotPreferences } = require('./lib/preferences-depot');
 const { creerRoutesPreferences } = require('./lib/preferences-routes');
@@ -168,6 +169,8 @@ const taskSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 120 },
   description: { type: String, default: '', trim: true, maxlength: 500 },
   completed: { type: Boolean, default: false },
+  // le jour où elle a été rayée, pour le bilan ; null tant qu'elle ne l'est pas
+  completedAt: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now },
   dueDate: { type: Date, default: null },
   category: { type: String, default: '', trim: true, maxlength: 32 },
@@ -631,6 +634,9 @@ async function migrateSchema() {
       { reminder: { offset: '', at: null, sentAt: null } },
     ],
     [{ myDay: { $exists: false } }, { myDay: null }],
+    // null, pas « maintenant » : dater l'historique au jour de la migration
+    // ferait passer tout ce qui a jamais été rayé pour le travail du jour
+    [{ completedAt: { $exists: false } }, { completedAt: null }],
   ];
 
   for (const [cible, valeurs] of defauts) {
@@ -698,7 +704,8 @@ app.post('/tasks', async (req, res) => {
 app.get('/tasks/stats', async (req, res) => {
   try {
     const base = { deletedAt: null };
-    const [total, done, overdue, myDay, byCategory] = await Promise.all([
+    const maintenant = new Date();
+    const [total, done, overdue, myDay, byCategory, rayees] = await Promise.all([
       Task.countDocuments(base),
       Task.countDocuments({ ...base, completed: true }),
       // une tâche terminée n'est plus un rappel, même si son échéance est passée.
@@ -707,7 +714,21 @@ app.get('/tasks/stats', async (req, res) => {
       Task.countDocuments({ ...base, completed: false, ...dueClause('overdue') }),
       Task.countDocuments({ ...base, completed: false, ...dueClause('myday') }),
       Task.aggregate([{ $match: base }, { $group: { _id: '$category', count: { $sum: 1 } } }]),
+      // les racines seulement : cocher un dossier coche ses étapes, et les
+      // compter ferait passer une tâche pour dix
+      Task.find({
+        ...base,
+        parentId: null,
+        completed: true,
+        completedAt: { $gte: debutDuBilan(maintenant) },
+      })
+        .select('completedAt')
+        .lean(),
     ]);
+    const jours = semaine(
+      rayees.map((t) => t.completedAt),
+      maintenant
+    );
 
     res.status(200).json({
       total,
@@ -716,6 +737,7 @@ app.get('/tasks/stats', async (req, res) => {
       overdue,
       myDay,
       byCategory: byCategory.map(({ _id, count }) => ({ category: _id || '', count })),
+      bilan: { aujourdhui: jours.at(-1).n, semaine: jours },
     });
   } catch (error) {
     fail(res, error);
@@ -809,9 +831,18 @@ app.post('/tasks/bulk', async (req, res) => {
 
     if (action === 'complete' || action === 'uncomplete') {
       const completed = action === 'complete';
+      // la date d'abord, et seulement sur celles qui changent d'état : une
+      // tâche déjà rayée garde le jour où elle l'a été
+      await Task.updateMany(
+        { ...cible, completed: !completed },
+        { $set: { completedAt: completed ? new Date() : null } }
+      );
       const { modifiedCount } = await Task.updateMany(cible, { $set: { completed } });
       // même règle qu'à l'unité : cocher un dossier coche ce qu'il contient
-      await Task.updateMany({ parentId: { $in: ids }, deletedAt: null }, { $set: { completed } });
+      await Task.updateMany(
+        { parentId: { $in: ids }, deletedAt: null },
+        { $set: { completed, completedAt: completed ? new Date() : null } }
+      );
       // et une récurrente cochée fait naître la suivante — la garde
       // d'idempotence de regenererRecurrence couvre une sélection recochée
       if (completed) {
@@ -961,6 +992,10 @@ app.put('/tasks/:id', async (req, res) => {
 
     if (Object.hasOwn(champs, 'tags')) champs.tags = normalizeTags(champs.tags);
 
+    if (Object.hasOwn(champs, 'completed')) {
+      champs.completedAt = dateDeFin(avant, champs.completed, new Date());
+    }
+
     // l'heure du rappel dépend de l'échéance ET du réglage : toucher à l'une
     // ou à l'autre la refait
     if (Object.hasOwn(champs, 'reminder') || Object.hasOwn(champs, 'dueDate')) {
@@ -979,7 +1014,7 @@ app.put('/tasks/:id', async (req, res) => {
     if (Object.hasOwn(champs, 'completed') && !task.parentId) {
       await Task.updateMany(
         { parentId: task._id, deletedAt: null },
-        { $set: { completed: champs.completed } }
+        { $set: { completed: champs.completed, completedAt: champs.completedAt } }
       );
     }
 

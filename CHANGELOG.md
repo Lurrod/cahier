@@ -24,6 +24,11 @@ des postes déjà installés.
   la priorité ou mettre à la corbeille. Chaque geste se défait par « Annuler ».
   La sélection tient d'une page à l'autre ; `Échap` la vide, et `Ctrl+K` →
   « Choisir toutes les tâches de la page » prend toute la page.
+- **Le bilan de la semaine.** Sous la jauge d'avancement, sept barres disent ce
+  qui a été rayé chaque jour, et le sous-titre salue le travail du jour (« 2
+  rayées aujourd'hui »). Le Cahier retient désormais la date à laquelle une
+  tâche est rayée ; celles rayées avant cette version n'en ont pas, et ne sont
+  pas comptées plutôt que d'être toutes datées d'aujourd'hui.
 - **Choisir combien de tâches tient une page.** Réglages → La liste : 5, 10, 20
   ou 50. Cinq restent le défaut ; au-delà, on tourne moins les pages.
 - **Un carnet de nuit.** Réglages → Apparence → Thème : « Papier », « Carnet de

@@ -16,6 +16,7 @@ import {
 } from './filters.js';
 import { initKeyboard } from './keyboard.js';
 import { telechargerSauvegarde } from './backup.js';
+import { dessinerBilan, noteDuJour } from './bilan.js';
 import { initMisesAJour } from './maj.js';
 import { bindBackdrop, closeModal, openModal } from './modal.js';
 import { initPalette } from './palette.js';
@@ -624,15 +625,17 @@ const updateCounters = () => {
   progress(progressTrack, ratio);
   progressLabel.textContent = total > 0 ? `${Math.round(ratio * 100)}%` : '–';
 
+  const note = noteDuJour(state.stats.bilan);
   if (total === 0) {
     subtitle.textContent = "Le cahier est vierge. Ajoute une ligne pour l'ouvrir.";
   } else if (active === 0) {
-    subtitle.textContent = 'Tout est rayé. Bien joué.';
+    subtitle.textContent = `Tout est rayé${note}. Bien joué.`;
   } else if (active === 1) {
-    subtitle.textContent = 'Une tâche reste à traiter.';
+    subtitle.textContent = `Une tâche reste à traiter${note}.`;
   } else {
-    subtitle.textContent = `${active} tâches restent à traiter.`;
+    subtitle.textContent = `${active} tâches restent à traiter${note}.`;
   }
+  dessinerBilan(state.stats.bilan);
 
   showOverdueCount(state.stats.overdue || 0);
   showMyDayCount(state.stats.myDay || 0);

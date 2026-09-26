@@ -1079,3 +1079,60 @@
 .barre-lot-vider:focus-visible {
   color: var(--red-pen);
 }
+
+/* ---------------------------------- bilan --------------------------------- */
+
+/* sept traits de feutre sous la jauge : la hauteur dit le compte du jour */
+.bilan {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+}
+
+.bilan-titre {
+  white-space: nowrap;
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+.bilan-barres {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.bilan-jour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* un jour à zéro garde un trait : une barre absente se lirait comme un trou */
+.bilan-barre {
+  width: 11px;
+  height: 30px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bilan-barre::after {
+  content: '';
+  width: 100%;
+  height: max(2px, var(--hauteur));
+  border-radius: 2px 2px 0 0;
+  background: var(--ink-faint);
+  transition: height 300ms var(--ease);
+}
+
+.bilan-barre.is-today::after {
+  background: var(--green-pen);
+}
+
+.bilan-initiale {
+  font-size: var(--step-xs);
+  line-height: 1;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}

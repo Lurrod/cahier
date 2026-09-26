@@ -215,6 +215,18 @@ describe('creerArrierePlan', () => {
     expect(app.inscriptions).toEqual([reglageDemarrage(true), reglageDemarrage(false)]);
   });
 
+  test('le registre n’est touché que lorsque le choix change', () => {
+    // les réglages sont réannoncés à chaque enregistrement, quel qu'il soit :
+    // changer la densité ne doit pas réécrire l'inscription au démarrage
+    const { app, arriere } = armer();
+
+    arriere.appliquer(reglages({ garder: true, demarrage: true }));
+    arriere.appliquer(reglages({ garder: true, demarrage: true }));
+    arriere.appliquer(reglages({ garder: false, demarrage: true }));
+
+    expect(app.inscriptions).toEqual([reglageDemarrage(true)]);
+  });
+
   test('en développement, on n’inscrit rien au démarrage de Windows', () => {
     // app.setLoginItemSettings y inscrirait electron.exe, pas le Cahier
     const { app, arriere } = armer({ enPaquet: false });

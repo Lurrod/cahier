@@ -148,3 +148,40 @@ test('lancé par l’ouverture de session, il attend caché dans la zone de noti
   await new Promise((r) => setTimeout(r, 2000));
   expect(await fenetre()).toEqual({ visible: false, existe: true });
 });
+
+test('cliquer dans un champ n’allume que son propre contour', async () => {
+  const page = await lancer();
+
+  await page.locator('#task-title').click();
+
+  // drawably allume le calque de focus de TOUS les cadres imbriqués dans un
+  // cadre qui contient le focus : un clic dans le titre soulignait chaque
+  // champ du composeur, et le composeur lui-même
+  const allumes = await page.evaluate(() =>
+    [...document.querySelectorAll('.drawably-host')]
+      .filter((h) =>
+        [...h.querySelectorAll(':scope > .drawably-svg .drawably-focus')].some(
+          (f) => getComputedStyle(f).visibility === 'visible'
+        )
+      )
+      .map((h) => h.querySelector('input, select, textarea')?.id || h.id || h.className)
+  );
+  expect(allumes).toEqual(['task-title']);
+});
+
+test('une case cochée au clavier n’allume que la sienne', async () => {
+  const page = await lancer();
+  await page.locator('#open-settings').click();
+  await page.locator('#settings-body .reglage-controle[type="checkbox"]').first().focus();
+  await page.keyboard.press('Space');
+
+  const allumes = await page.evaluate(
+    () =>
+      [...document.querySelectorAll('#settings-body .drawably-host')].filter((h) =>
+        [...h.querySelectorAll(':scope > .drawably-svg .drawably-focus')].some(
+          (f) => getComputedStyle(f).visibility === 'visible'
+        )
+      ).length
+  );
+  expect(allumes).toBe(1);
+});

@@ -8,6 +8,15 @@ Une version se publie en étiquetant un commit : `npm version <niveau>` puis
 release brouillon ; publier ce brouillon dans GitHub est ce qui la rend visible
 des postes déjà installés.
 
+## [Non publié]
+
+### Corrigé
+
+- **Cliquer dans un champ n'allume plus le contour de tous les autres.** Dans
+  le composeur, la fenêtre « Modifier » ou les Réglages, le premier clic
+  soulignait chaque champ du cadre, et le cadre lui-même — on ne voyait plus
+  où l'on écrivait. Seul le champ qui a la main porte désormais son contour.
+
 ## [3.15.0] — 2026-09-27
 
 > Les versions 3.4.0 à 3.14.0 n'ont pas été publiées séparément : chacune

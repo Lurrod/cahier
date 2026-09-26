@@ -165,6 +165,23 @@ body::before {
   font-family: inherit;
 }
 
+/* Le contour de focus ne doit s'allumer que sur le cadre qui tient le focus.
+
+   drawably l'allume sur `.drawably-host:has(:focus-visible) .drawably-focus` :
+   le combinateur descendant touche aussi les cadres imbriqués. Un cadre qui
+   contient des champs — le composeur, « Modifier », les Réglages — allumait
+   donc, au premier clic, le contour de chacun de ses champs, et le sien.
+   Chaque cadre ne parle ici que de son propre calque (`> .drawably-svg`). */
+
+/* un cadre voisin, qui ne contient pas le focus, reste éteint */
+.drawably-host:not(:focus-visible):not(:has(:focus-visible)) > .drawably-svg .drawably-focus,
+/* un cadre qui ne fait qu'envelopper le champ tenant le focus aussi */
+.drawably-host:has(.drawably-host:focus-visible, .drawably-host :focus-visible)
+  > .drawably-svg
+  .drawably-focus {
+  visibility: hidden;
+}
+
 /* grain de papier, posé au-dessus du quadrillage et sous le contenu */
 .paper-grain {
   position: fixed;

@@ -25,14 +25,16 @@
  * @param {Document} [doc] injecté pour que les tests n'aient pas à toucher au
  *   document global
  */
-export const telechargerSauvegarde = (doc = document) => {
+export const telecharger = (adresse, doc = document) => {
   const lien = doc.createElement('a');
-  lien.setAttribute('href', '/export');
+  lien.setAttribute('href', adresse);
   lien.setAttribute('download', '');
   doc.body.appendChild(lien);
   lien.click();
   lien.remove();
 };
+
+export const telechargerSauvegarde = (doc = document) => telecharger('/export', doc);
 
 /**
  * Câble « Restaurer… » dans une racine donnée.

@@ -1282,6 +1282,28 @@ describe('clavier', () => {
     expect(labels).toEqual(['Voir : en retard', 'Reporter les retards à demain']);
   });
 
+  test('la palette exporte vers un agenda', async () => {
+    await boot();
+    const clics = [];
+    const vraiClic = window.HTMLAnchorElement.prototype.click;
+    window.HTMLAnchorElement.prototype.click = function () {
+      clics.push(this.getAttribute('href'));
+    };
+
+    try {
+      press('k', { ctrlKey: true });
+      const input = document.getElementById('palette-input');
+      input.value = 'agenda';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      document.querySelector('#palette-list .palette-item').click();
+      await settle();
+    } finally {
+      window.HTMLAnchorElement.prototype.click = vraiClic;
+    }
+
+    expect(clics).toEqual(['/export.ics']);
+  });
+
   test('la palette sauvegarde sans dépendre d’un bouton de la page', async () => {
     await boot();
     const clics = [];

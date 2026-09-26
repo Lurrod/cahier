@@ -15,7 +15,7 @@ import {
   showOverdueCount,
 } from './filters.js';
 import { initKeyboard } from './keyboard.js';
-import { telechargerSauvegarde } from './backup.js';
+import { telecharger, telechargerSauvegarde } from './backup.js';
 import { dessinerBilan, noteDuJour } from './bilan.js';
 import { initMisesAJour } from './maj.js';
 import { bindBackdrop, closeModal, openModal } from './modal.js';
@@ -850,6 +850,7 @@ const { openPalette, closePalette } = initPalette({
   openTrash,
   ouvrirReglages: () => reglages.ouvrir(),
   sauvegarder: () => telechargerSauvegarde(),
+  exporterAgenda: () => telecharger('/export.ics'),
   reporterRetards: postponeOverdue,
   choisirLaPage: () => selection.prendreLaPage(),
 });

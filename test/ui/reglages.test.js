@@ -204,6 +204,17 @@ describe('page Réglages', () => {
     expect(donnees).toContain('Cahier\\sauvegardes');
   });
 
+  test('les tâches datées s’exportent vers un agenda', async () => {
+    const { reglages, preferences } = armer();
+    await preferences.charger();
+
+    await reglages.ouvrir();
+
+    const lien = document.getElementById('reglages-agenda');
+    expect(lien.getAttribute('href')).toBe('/export.ics');
+    expect(lien.hasAttribute('download')).toBe(true);
+  });
+
   test('sans dossier connu, la copie quotidienne n’est pas promise', async () => {
     // un serveur plus ancien ne dit rien du dossier : annoncer une copie qu'il
     // ne fait pas serait pire que se taire

@@ -791,6 +791,21 @@ describe('Export / import', () => {
     expect(res.text).not.toContain('Ancienne');
   });
 
+  test('GET /export.ics rend les tâches datées en calendrier', async () => {
+    await request(app)
+      .post('/tasks')
+      .send({ title: 'Dentiste', dueDate: '2026-09-28T12:00:00.000Z' });
+    await request(app).post('/tasks').send({ title: 'Sans date' });
+
+    const res = await request(app).get('/export.ics');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/text\/calendar/);
+    expect(res.headers['content-disposition']).toMatch(/cahier-.*\.ics/);
+    expect(res.text).toContain('SUMMARY:Dentiste');
+    expect(res.text).not.toContain('Sans date');
+  });
+
   test('GET /export.csv rend un tableau à colonnes stables', async () => {
     await seed();
 

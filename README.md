@@ -217,6 +217,7 @@ du jour : dater tout l'historique au jour de la migration ferait mentir le bilan
 | `GET`    | `/export`             | Sauvegarde JSON complète (corbeille comprise)   |
 | `GET`    | `/export.md`          | Le cahier en Markdown, groupé par catégorie     |
 | `GET`    | `/export.csv`         | Tableau CSV à colonnes stables                  |
+| `GET`    | `/export.ics`         | Tâches datées à faire, en calendrier iCalendar  |
 | `POST`   | `/import`             | Remet une sauvegarde (`merge` ou `replace`)     |
 | `GET`    | `/categories`         | Liste des catégories                            |
 | `POST`   | `/categories`         | Crée une catégorie (`name`, `color`)            |
@@ -361,6 +362,12 @@ et `deletedAt: null` : l'aller-retour reproduit les données, pas l'absence d'un
 ce que ferait une migration, les requêtes ne font aucune différence entre « absent » et
 « null », et l'opération est stable — un second aller-retour ne change plus rien.
 
+`export.ics` ne porte que les tâches datées qui restent à faire, étapes comprises. Chaque
+événement garde l'identifiant de sa tâche (`UID`) : un agenda qui réimporte le fichier met
+l'événement à jour au lieu de le dédoubler. La récurrence devient une `RRULE` (les jours
+ouvrés, `BYDAY=MO,TU,WE,TH,FR`) et le rappel une alarme. Une mensuelle posée un 31 est la
+seule divergence : le Cahier la ramène au dernier jour des mois courts, un agenda la saute.
+
 `export.csv` neutralise les cellules commençant par `=`, `+`, `-` ou `@` en les préfixant
 d'une apostrophe — sans quoi un tableur les exécuterait comme des formules. C'est pourquoi le
 format d'aller-retour est le JSON, pas le CSV.
@@ -492,6 +499,7 @@ cahier/
 ├── lib/                    # Logique pure, testable sans base ni serveur
 │   ├── portable.js         # Forme de l'export, liste blanche d'import
 │   ├── formats.js          # Rendus Markdown et CSV
+│   ├── agenda.js           # Export iCalendar : échappement, pliage, RRULE
 │   ├── recurrence.js       # Échéance suivante d'une récurrente
 │   ├── tags.js             # Normalisation des étiquettes
 │   ├── ordering.js         # Indexation fractionnaire de l'ordre manuel

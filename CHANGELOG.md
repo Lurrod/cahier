@@ -24,6 +24,11 @@ des postes déjà installés.
   la priorité ou mettre à la corbeille. Chaque geste se défait par « Annuler ».
   La sélection tient d'une page à l'autre ; `Échap` la vide, et `Ctrl+K` →
   « Choisir toutes les tâches de la page » prend toute la page.
+- **Les tâches datées dans votre agenda.** Réglages → Données → « Vers un agenda
+  (.ics) », ou `Ctrl+K` → « Exporter vers un agenda » : un fichier à importer
+  dans Outlook, Google Agenda ou Thunderbird, avec les répétitions et les
+  rappels. Le réimporter plus tard met les événements à jour au lieu de les
+  dédoubler.
 - **Le bilan de la semaine.** Sous la jauge d'avancement, sept barres disent ce
   qui a été rayé chaque jour, et le sous-titre salue le travail du jour (« 2
   rayées aujourd'hui »). Le Cahier retient désormais la date à laquelle une

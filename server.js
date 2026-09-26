@@ -7,6 +7,7 @@ const fs = require('fs');
 require('dotenv').config();
 const { exportShape, validateImport, HEX_COLOR } = require('./lib/portable');
 const { toMarkdown, toCsv } = require('./lib/formats');
+const { toIcs } = require('./lib/agenda');
 const { FREQUENCES, nextDueDate } = require('./lib/recurrence');
 const { etapesTrouvees, annoterEtapes } = require('./lib/recherche');
 const { normalizeTags } = require('./lib/tags');
@@ -1263,6 +1264,19 @@ app.get('/export.md', async (req, res) => {
     res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="cahier-${fileStamp()}.md"`);
     res.status(200).send(toMarkdown(tasks));
+  } catch (error) {
+    fail(res, error);
+  }
+});
+
+app.get('/export.ics', async (req, res) => {
+  try {
+    const tasks = await Task.find({ deletedAt: null, completed: false, dueDate: { $ne: null } })
+      .sort({ dueDate: 1, _id: 1 })
+      .lean();
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="cahier-${fileStamp()}.ics"`);
+    res.status(200).send(toIcs(tasks));
   } catch (error) {
     fail(res, error);
   }

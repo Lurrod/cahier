@@ -54,7 +54,10 @@ presque tout le reste :
   document mal formé ou aux identifiants dupliqués _avant_ de toucher à la
   base, et remet la base en place si l'écriture échoue en cours de route.
 - **Exports assainis** : une cellule commençant par `=`, `+`, `-` ou `@` est
-  neutralisée à l'export CSV — un tableur l'exécuterait comme une formule.
+  neutralisée à l'export CSV — un tableur l'exécuterait comme une formule. À
+  l'export agenda, virgules, points-virgules, antislashs et retours à la ligne
+  sont échappés : un titre ne peut pas ajouter de propriété à l'événement (une
+  `RRULE` ou une alarme glissée dans un titre reste du texte).
 - **Pas d'opérateur Mongo fourni par le client** : les filtres de `GET /tasks`
   et les listes d'identifiants sont construits côté serveur. `PATCH /tasks/due`
   n'accepte que des identifiants de 24 caractères hexadécimaux et des dates

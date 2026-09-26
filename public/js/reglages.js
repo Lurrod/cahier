@@ -181,9 +181,20 @@ export const initReglages = ({
           Restaurer…
         </button>
         <input type="file" id="reglages-fichier" accept="application/json,.json" hidden />
+        <a
+          class="btn"
+          id="reglages-agenda"
+          href="/export.ics"
+          download
+          data-sketch="button"
+          data-tone="neutral"
+          >Vers un agenda (.ics)</a
+        >
       </div>
       <p class="reglages-note">
-        Restaurer ajoute ce qui manque et ne touche à rien d’existant.
+        Restaurer ajoute ce qui manque et ne touche à rien d’existant. Le fichier
+        d’agenda porte les tâches datées qui restent à faire, avec leurs répétitions et
+        leurs rappels ; le réimporter met les événements à jour sans les dédoubler.
       </p>
       ${noteCopieQuotidienne(systeme.dossierSauvegardes)}
     </section>

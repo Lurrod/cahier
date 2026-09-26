@@ -136,7 +136,8 @@ tant que `CORS_ORIGIN` n'est pas défini.
   barre paraît sous la liste — rayer, ma journée, reporter à demain, catégorie, priorité,
   corbeille, chacun annulable. La sélection tient d'une page à l'autre, `Échap` la vide
 - **Clavier** : `n` saisir · `/` chercher · `j`/`k` naviguer · `x` cocher · `e` modifier ·
-  `r`/`R` reporter · `m` ma journée · `s` choisir · `d` dupliquer · `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
+  `r`/`R` reporter · `m` ma journée · `s` choisir · `d` dupliquer · `Suppr` supprimer ·
+  `?` la fiche de tous les raccourcis · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
 - **Réglages** : apparence (thème papier, carnet de nuit ou comme Windows, densité,
   taille du texte, grain du papier, traits au crayon), vue d'ouverture (statut, échéance, tri),
   tâches par page et mise à jour. Ils vivent

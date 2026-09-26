@@ -203,7 +203,7 @@
           <span class="kbd">↵</span> ajouter · <span class="kbd">/</span> chercher ·
           <span class="kbd">Ctrl</span>+<span class="kbd">K</span> palette ·
           <span class="kbd">Ctrl</span>+clic ou <span class="kbd">s</span> choisir plusieurs ·
-          <span class="kbd">Esc</span> fermer
+          <span class="kbd">?</span> tous les raccourcis · <span class="kbd">Esc</span> fermer
         </p>
       </aside>
 
@@ -570,6 +570,62 @@
           />
         </span>
         <ul id="palette-list" class="palette-list" role="listbox"></ul>
+      </div>
+    </div>
+
+    <!-- La fiche des raccourcis. Toute touche que keyboard.js connaît doit y
+         figurer : un test y veille, une fonction qu'on ne trouve pas
+         n'existe pas pour qui ne lit pas le code. -->
+    <div id="aide-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="aide-title">
+      <div class="modal-content modal-content--large" data-sketch="card">
+        <h2 id="aide-title" class="modal-title">Au clavier</h2>
+        <div class="aide-colonnes">
+          <section>
+            <h3 class="aide-titre">Écrire et chercher</h3>
+            <dl class="aide-liste">
+              <dt><kbd>n</kbd></dt>
+              <dd>Nouvelle tâche</dd>
+              <dt><kbd>/</kbd></dt>
+              <dd>Chercher</dd>
+              <dt><kbd>Ctrl</kbd>+<kbd>K</kbd></dt>
+              <dd>Palette de commandes</dd>
+              <dt><kbd>?</kbd></dt>
+              <dd>Cette fiche</dd>
+            </dl>
+          </section>
+          <section>
+            <h3 class="aide-titre">Sur la ligne choisie</h3>
+            <dl class="aide-liste">
+              <dt><kbd>j</kbd> <kbd>k</kbd></dt>
+              <dd>Descendre, monter</dd>
+              <dt><kbd>x</kbd></dt>
+              <dd>Rayer, ou dé-rayer</dd>
+              <dt><kbd>e</kbd></dt>
+              <dd>Modifier</dd>
+              <dt><kbd>r</kbd></dt>
+              <dd>Reporter à demain</dd>
+              <dt><kbd>R</kbd></dt>
+              <dd>Reporter à lundi</dd>
+              <dt><kbd>m</kbd></dt>
+              <dd>Ma journée</dd>
+              <dt><kbd>d</kbd></dt>
+              <dd>Dupliquer, étapes comprises</dd>
+              <dt><kbd>Suppr</kbd></dt>
+              <dd>Mettre à la corbeille</dd>
+            </dl>
+          </section>
+          <section>
+            <h3 class="aide-titre">Plusieurs à la fois</h3>
+            <dl class="aide-liste">
+              <dt><kbd>s</kbd></dt>
+              <dd>Prendre ou rendre la ligne</dd>
+              <dt><kbd>Ctrl</kbd>+clic</dt>
+              <dd>Prendre ou rendre à la souris</dd>
+              <dt><kbd>Échap</kbd></dt>
+              <dd>Vider la sélection, fermer une fenêtre</dd>
+            </dl>
+          </section>
+        </div>
       </div>
     </div>
 

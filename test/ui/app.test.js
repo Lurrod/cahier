@@ -1343,6 +1343,38 @@ describe('clavier', () => {
   const press = (key, options = {}) =>
     document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...options }));
 
+  test('? ouvre la fiche des raccourcis', async () => {
+    await boot();
+
+    press('?');
+
+    const aide = document.getElementById('aide-modal');
+    expect(aide.classList.contains('active')).toBe(true);
+    expect(aide.textContent).toContain('Dupliquer');
+  });
+
+  test('la fiche nomme chaque raccourci que le clavier connaît', async () => {
+    await boot();
+
+    // une touche absente de la fiche est une fonction que personne ne trouve
+    const touches = [...document.querySelectorAll('#aide-modal kbd')].map((k) => k.textContent);
+    ['n', '/', 'j', 'k', 'x', 'e', 'r', 'R', 'm', 's', 'd', 'Suppr', 'Échap', '?'].forEach((t) =>
+      expect(touches).toContain(t)
+    );
+  });
+
+  test('la palette ouvre aussi la fiche', async () => {
+    await boot();
+    press('k', { ctrlKey: true });
+    const input = document.getElementById('palette-input');
+    input.value = 'raccourcis';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    document.querySelector('#palette-list .palette-item').click();
+
+    expect(document.getElementById('aide-modal').classList.contains('active')).toBe(true);
+  });
+
   test('n met le focus sur le champ de saisie', async () => {
     await boot();
     press('n');

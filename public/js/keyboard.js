@@ -21,6 +21,7 @@ const taskList = $('task-list');
  *   toggleMyDay: (task: object) => Promise<void>,
  *   basculerSelection: (task: object) => void,
  *   dupliquerTache: (task: object) => Promise<void>,
+ *   ouvrirAide: () => void,
  *   viderSelection: () => boolean,
  *   openPalette: () => void,
  *   closePalette: () => void,
@@ -39,6 +40,7 @@ export const initKeyboard = ({
   toggleMyDay,
   basculerSelection,
   dupliquerTache,
+  ouvrirAide,
   viderSelection,
   openPalette,
   closePalette,
@@ -90,6 +92,10 @@ export const initKeyboard = ({
     const cursorTask = taskAt(getState().cursor);
 
     switch (e.key) {
+      case '?':
+        e.preventDefault();
+        ouvrirAide();
+        break;
       case '/':
         e.preventDefault();
         focusSearch();

@@ -1142,3 +1142,52 @@
 .modal-actions-start {
   margin-right: auto;
 }
+
+/* ------------------------------ fiche du clavier -------------------------- */
+
+.modal-content--large {
+  width: min(760px, 100%);
+}
+
+.aide-colonnes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--gap-4);
+}
+
+.aide-titre {
+  margin: 0 0 var(--gap-2);
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.aide-liste {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px var(--gap-3);
+  margin: 0;
+  font-size: var(--step-sm);
+}
+
+.aide-liste dt {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.aide-liste dd {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.aide-liste kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  font-family: var(--font-ui);
+  font-size: var(--step-xs);
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper-deep);
+  border-radius: 4px;
+}

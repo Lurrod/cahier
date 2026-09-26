@@ -21,6 +21,8 @@ des postes déjà installés.
 
 ### Ajouté
 
+- **Tous les raccourcis sur une fiche.** `?` (ou `Ctrl+K` → « Raccourcis
+  clavier ») montre chaque touche et ce qu'elle fait, rangées par usage.
 - **Ouvrir le Cahier avec Windows.** Réglages → En arrière-plan : il démarre
   discrètement dans la zone de notification à l'ouverture de session, prêt à
   rappeler. Désactivé tant qu'on ne l'a pas demandé.

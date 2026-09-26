@@ -18,7 +18,7 @@ import { initKeyboard } from './keyboard.js';
 import { telecharger, telechargerSauvegarde } from './backup.js';
 import { dessinerBilan, noteDuJour } from './bilan.js';
 import { initMisesAJour } from './maj.js';
-import { bindBackdrop } from './modal.js';
+import { bindBackdrop, openModal } from './modal.js';
 import { initPalette } from './palette.js';
 import { reporter } from './report.js';
 import { initPreferences } from './preferences.js';
@@ -565,6 +565,7 @@ const { openPalette, closePalette } = initPalette({
   ouvrirReglages: () => reglages.ouvrir(),
   sauvegarder: () => telechargerSauvegarde(),
   exporterAgenda: () => telecharger('/export.ics'),
+  ouvrirAide: () => openModal($('aide-modal')),
   reporterRetards: postponeOverdue,
   choisirLaPage: () => selection.prendreLaPage(),
 });
@@ -580,6 +581,7 @@ const { applyCursor } = initKeyboard({
   toggleMyDay,
   basculerSelection: (task) => selection.basculer(task),
   dupliquerTache,
+  ouvrirAide: () => openModal($('aide-modal')),
   viderSelection: () => selection.vider(),
   openPalette,
   closePalette,

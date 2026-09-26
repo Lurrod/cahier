@@ -1136,3 +1136,9 @@
   color: var(--ink-faint);
   text-transform: uppercase;
 }
+
+/* « Dupliquer » ne ferme pas la fenêtre comme les deux autres : il se tient à
+   l'écart, à gauche, pour qu'on ne le prenne pas pour « Enregistrer » */
+.modal-actions-start {
+  margin-right: auto;
+}

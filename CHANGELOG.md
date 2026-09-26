@@ -24,6 +24,11 @@ des postes déjà installés.
   la priorité ou mettre à la corbeille. Chaque geste se défait par « Annuler ».
   La sélection tient d'une page à l'autre ; `Échap` la vide, et `Ctrl+K` →
   « Choisir toutes les tâches de la page » prend toute la page.
+- **Dupliquer une tâche, étapes comprises.** `d` au clavier, ou « Dupliquer »
+  dans « Modifier » : la valise, la clôture du mois, la liste de courses se
+  refont en un geste. La copie reprend tout ce qui décrit la tâche — notes,
+  catégorie, priorité, étiquettes, échéance, répétition, rappel — et ses
+  étapes repartent décochées. « Annuler » la met à la corbeille.
 - **Les tâches datées dans votre agenda.** Réglages → Données → « Vers un agenda
   (.ics) », ou `Ctrl+K` → « Exporter vers un agenda » : un fichier à importer
   dans Outlook, Google Agenda ou Thunderbird, avec les répétitions et les

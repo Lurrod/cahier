@@ -130,11 +130,13 @@ tant que `CORS_ORIGIN` n'est pas défini.
   lendemain et `R` au lundi qui vient, à la même heure. Une tâche à venir glisse depuis sa
   propre échéance — reporter n'avance jamais rien. `Ctrl+K` → « Reporter les retards à demain »
   les déplace tous d'un coup, chacun à son heure, et se défait par « Annuler »
+- **Dupliquer** : `d` ou « Dupliquer » dans « Modifier » — la même tâche, étapes
+  comprises et décochées, sans son état (ni rayée, ni dans ma journée)
 - **Sélection** : `Ctrl`+clic (ou `Maj`+clic) sur des lignes, ou `s` au clavier, et une
   barre paraît sous la liste — rayer, ma journée, reporter à demain, catégorie, priorité,
   corbeille, chacun annulable. La sélection tient d'une page à l'autre, `Échap` la vide
 - **Clavier** : `n` saisir · `/` chercher · `j`/`k` naviguer · `x` cocher · `e` modifier ·
-  `r`/`R` reporter · `m` ma journée · `s` choisir · `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
+  `r`/`R` reporter · `m` ma journée · `s` choisir · `d` dupliquer · `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
 - **Réglages** : apparence (thème papier, carnet de nuit ou comme Windows, densité,
   taille du texte, grain du papier, traits au crayon), vue d'ouverture (statut, échéance, tri),
   tâches par page et mise à jour. Ils vivent
@@ -490,6 +492,7 @@ cahier/
 │       ├── preferences.js  # Les réglages courants, détenus à un seul endroit
 │       ├── bilan.js        # Les sept barres de la semaine
 │       ├── maj.js          # Bandeau de mise à jour (n'ouvre que sur une version prête)
+│       ├── dupliquer.js    # Copie d'une tâche et de ses étapes
 │       ├── selection.js    # Sélection multiple et barre d'actions groupées
 │       ├── steps.js        # Étapes d'une tâche, dépliage et cache
 │       ├── keyboard.js     # Curseur et raccourcis clavier

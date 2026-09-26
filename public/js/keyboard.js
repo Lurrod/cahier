@@ -20,6 +20,7 @@ const taskList = $('task-list');
  *   postponeTask: (task: object, cible: 'demain'|'semaine') => Promise<void>,
  *   toggleMyDay: (task: object) => Promise<void>,
  *   basculerSelection: (task: object) => void,
+ *   dupliquerTache: (task: object) => Promise<void>,
  *   viderSelection: () => boolean,
  *   openPalette: () => void,
  *   closePalette: () => void,
@@ -37,6 +38,7 @@ export const initKeyboard = ({
   postponeTask,
   toggleMyDay,
   basculerSelection,
+  dupliquerTache,
   viderSelection,
   openPalette,
   closePalette,
@@ -128,6 +130,12 @@ export const initKeyboard = ({
         if (cursorTask) {
           e.preventDefault();
           toggleMyDay(cursorTask);
+        }
+        break;
+      case 'd':
+        if (cursorTask) {
+          e.preventDefault();
+          dupliquerTache(cursorTask);
         }
         break;
       case 's':

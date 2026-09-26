@@ -25,6 +25,7 @@ import { reporter } from './report.js';
 import { lierAEcheance, recurrenceModifiee } from './serie.js';
 import { initPreferences } from './preferences.js';
 import { initReglages } from './reglages.js';
+import { dupliquer } from './dupliquer.js';
 import { initSelection } from './selection.js';
 import { resetSteps, toggleSteps } from './steps.js';
 import { initTrash } from './trash.js';
@@ -341,6 +342,8 @@ const removeTask = async (task) => {
   }
   await refresh({ silent: true });
 };
+
+const dupliquerTache = (task) => dupliquer(task, { api, refresh, toast });
 
 const restoreTask = async (id) => {
   try {
@@ -814,6 +817,13 @@ saveEditBtn.addEventListener('click', async () => {
 
 closeEditModalBtn.addEventListener('click', () => closeModal(editModal));
 
+/** Copie de la tâche ouverte : on ferme d'abord, la copie paraît dans la liste. */
+$('duplicate-edit').addEventListener('click', () => {
+  const task = state.tasks.find((t) => t._id === state.currentTaskId);
+  closeModal(editModal);
+  if (task) dupliquerTache(task);
+});
+
 confirmDeleteCategoryBtn.addEventListener('click', () => {
   if (state.categoryToDelete) {
     removeCategory(state.categoryToDelete);
@@ -865,6 +875,7 @@ const { applyCursor } = initKeyboard({
   postponeTask,
   toggleMyDay,
   basculerSelection: (task) => selection.basculer(task),
+  dupliquerTache,
   viderSelection: () => selection.vider(),
   openPalette,
   closePalette,

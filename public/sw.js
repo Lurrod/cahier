@@ -53,6 +53,7 @@ const COQUILLE = [
   '/js/backup.js',
   '/js/bilan.js',
   '/js/dragdrop.js',
+  '/js/dupliquer.js',
   '/js/filters.js',
   '/js/keyboard.js',
   '/js/maj.js',

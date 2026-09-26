@@ -127,6 +127,17 @@ const mutate = (url, method, body) => {
 
   if (method === 'POST' && url.startsWith('/systeme/maj/')) return server.systeme;
 
+  if (method === 'POST' && url === '/tasks' && server.creer) {
+    server.crees = (server.crees || 0) + 1;
+    const creee = task(body.title, { ...body, _id: `cree-${server.crees}` });
+    if (body.parentId) {
+      server.children[body.parentId] = [...(server.children[body.parentId] || []), creee];
+    } else {
+      server.tasks = [...server.tasks, creee];
+    }
+    return creee;
+  }
+
   return {};
 };
 
@@ -641,6 +652,96 @@ describe('tâches par page', () => {
     await settle();
 
     expect(limites().at(-1)).toBe('50');
+  });
+});
+
+describe('dupliquer', () => {
+  const press = (key) =>
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  const creations = () => server.calls.filter((c) => c.method === 'POST' && c.url === '/tasks');
+
+  const modele = () =>
+    task('Valise', {
+      description: 'Vérifier la météo',
+      category: 'Perso',
+      priority: 'high',
+      tags: ['voyage'],
+      dueDate: '2026-10-02T07:00:00.000Z',
+      recurrence: { freq: 'yearly', interval: 1, until: null },
+      reminder: { offset: '1d', at: '2026-10-01T07:00:00.000Z', sentAt: null },
+      completed: true,
+      myDay: new Date().toISOString(),
+      childCount: 2,
+      childDone: 1,
+    });
+
+  test('`d` recopie la tâche du curseur, sans son état', async () => {
+    server.creer = true;
+    server.tasks = [modele()];
+    await boot();
+
+    press('j');
+    press('d');
+    await settle();
+
+    expect(creations()[0].body).toEqual({
+      title: 'Valise',
+      description: 'Vérifier la météo',
+      category: 'Perso',
+      priority: 'high',
+      tags: ['voyage'],
+      dueDate: '2026-10-02T07:00:00.000Z',
+      recurrence: { freq: 'yearly', interval: 1, until: null },
+      // l'heure du rappel se recalcule sur l'échéance : seul le réglage voyage
+      reminder: { offset: '1d' },
+    });
+  });
+
+  test('les étapes suivent, décochées, sous la copie', async () => {
+    server.creer = true;
+    server.tasks = [modele()];
+    server.children['id-Valise'] = [
+      task('Passeport', { parentId: 'id-Valise', completed: true }),
+      task('Chargeur', { parentId: 'id-Valise' }),
+    ];
+    await boot();
+
+    press('j');
+    press('d');
+    await settle();
+
+    const etapes = creations()
+      .slice(1)
+      .map((c) => c.body);
+    expect(etapes).toEqual([
+      { title: 'Passeport', parentId: 'cree-1' },
+      { title: 'Chargeur', parentId: 'cree-1' },
+    ]);
+  });
+
+  test('« Dupliquer » dans « Modifier » recopie la tâche ouverte', async () => {
+    server.creer = true;
+    await boot();
+    document.querySelector('.task .edit').click();
+
+    document.getElementById('duplicate-edit').click();
+    await settle();
+
+    expect(document.getElementById('edit-modal').classList.contains('active')).toBe(false);
+    expect(creations()[0].body.title).toBe('Relire le brief');
+  });
+
+  test('« Annuler » met la copie à la corbeille', async () => {
+    server.creer = true;
+    await boot();
+    press('j');
+    press('d');
+    await settle();
+
+    document.querySelector('.toast-action').click();
+    await settle();
+
+    expect(server.calls.some((c) => c.method === 'DELETE' && c.url === '/tasks/cree-1')).toBe(true);
   });
 });
 

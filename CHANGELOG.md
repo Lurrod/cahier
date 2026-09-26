@@ -24,6 +24,8 @@ des postes déjà installés.
   la priorité ou mettre à la corbeille. Chaque geste se défait par « Annuler ».
   La sélection tient d'une page à l'autre ; `Échap` la vide, et `Ctrl+K` →
   « Choisir toutes les tâches de la page » prend toute la page.
+- **Choisir combien de tâches tient une page.** Réglages → La liste : 5, 10, 20
+  ou 50. Cinq restent le défaut ; au-delà, on tourne moins les pages.
 - **Un carnet de nuit.** Réglages → Apparence → Thème : « Papier », « Carnet de
   nuit » (papier bleu-noir, encre pâle) ou « Comme Windows », qui bascule en
   même temps que le système, Cahier ouvert. Le surligneur passe à l'ocre et les

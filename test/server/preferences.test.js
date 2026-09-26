@@ -105,3 +105,20 @@ describe('le thème', () => {
     expect(normaliserPreferences({ apparence: { theme: 'fluo' } }).apparence.theme).toBe('papier');
   });
 });
+
+describe('le nombre de tâches par page', () => {
+  test('reste à cinq par défaut : personne ne voit sa liste changer sans l’avoir demandé', () => {
+    expect(DEFAUTS.liste.parPage).toBe('5');
+  });
+
+  test.each(['5', '10', '20', '50'])('accepte %s', (parPage) => {
+    expect(normaliserPreferences({ liste: { parPage } }).liste.parPage).toBe(parPage);
+  });
+
+  test('refuse une valeur hors de la liste, et le nombre nu', () => {
+    // la page Réglages envoie la valeur d'un <select>, donc une chaîne : un
+    // nombre ne vient que d'un client qui ne passe pas par elle
+    expect(normaliserPreferences({ liste: { parPage: '7' } }).liste.parPage).toBe('5');
+    expect(normaliserPreferences({ liste: { parPage: 1000 } }).liste.parPage).toBe('5');
+  });
+});

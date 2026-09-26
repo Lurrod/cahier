@@ -77,6 +77,18 @@ const mutate = (url, method, body) => {
     return entry.task;
   }
 
+  // avant la branche générique : sans cela, un PUT /preferences serait pris
+  // pour la modification d'une tâche nommée « preferences »
+  if (method === 'PUT' && url === '/preferences') {
+    server.preferences = Object.fromEntries(
+      Object.entries(server.preferences).map(([section, reglages]) => [
+        section,
+        { ...reglages, ...(body[section] || {}) },
+      ])
+    );
+    return server.preferences;
+  }
+
   if (method === 'PUT') {
     server.tasks = server.tasks.map((t) => (t._id === id ? { ...t, ...body } : t));
     return server.tasks.find((t) => t._id === id);
@@ -111,16 +123,6 @@ const mutate = (url, method, body) => {
 
   if (method === 'PATCH' && url.endsWith('/order')) {
     return { message: 'ordre mis à jour' };
-  }
-
-  if (method === 'PUT' && url === '/preferences') {
-    server.preferences = Object.fromEntries(
-      Object.entries(server.preferences).map(([section, reglages]) => [
-        section,
-        { ...reglages, ...(body[section] || {}) },
-      ])
-    );
-    return server.preferences;
   }
 
   if (method === 'POST' && url.startsWith('/systeme/maj/')) return server.systeme;
@@ -588,6 +590,57 @@ describe('sélection', () => {
     await settle();
 
     expect(ligne('Relire le brief').classList.contains('is-selected')).toBe(true);
+  });
+});
+
+describe('tâches par page', () => {
+  const limites = () =>
+    calls()
+      .filter((u) => u.startsWith('/tasks?'))
+      .map((u) => new URL(u, 'http://test').searchParams.get('limit'));
+
+  test('la liste demande le nombre réglé dès le premier chargement', async () => {
+    server.preferences = { ...server.preferences, liste: { parPage: '20' } };
+
+    await boot();
+
+    // pas de première page à cinq puis d'une seconde à vingt : ce serait une
+    // requête de trop, et une liste qui saute sous les yeux
+    expect(limites()).toEqual(['20']);
+  });
+
+  test('sans réglage, la page reste à cinq', async () => {
+    await boot();
+
+    expect(limites()).toEqual(['5']);
+  });
+
+  test('changer le réglage recharge la liste à la nouvelle taille', async () => {
+    // un vrai serveur rend toujours le document complet, section neuve comprise
+    server.preferences = { ...server.preferences, liste: { parPage: '5' } };
+    server.schema = {
+      sections: { liste: { titre: 'La liste', note: null } },
+      schema: {
+        liste: {
+          parPage: {
+            libelle: 'Tâches par page',
+            type: 'choix',
+            valeurs: ['5', '10', '20', '50'].map((v) => ({ valeur: v, libelle: v })),
+            defaut: '5',
+          },
+        },
+      },
+    };
+    await boot();
+    document.getElementById('open-settings').click();
+    await settle();
+
+    const champ = document.querySelector('[data-reglage="liste.parPage"] .reglage-controle');
+    champ.value = '50';
+    champ.dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
+
+    expect(limites().at(-1)).toBe('50');
   });
 });
 

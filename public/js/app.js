@@ -52,6 +52,12 @@ import {
 } from './util.js';
 
 const PAGE_SIZE = 5;
+
+/**
+ * Le nombre de lignes par page, tel que réglé. Lu à chaque requête : les
+ * réglages sont chargés avant la première liste, et peuvent changer ensuite.
+ */
+const taillePage = () => Number.parseInt(preferences.valeurs()?.liste?.parPage, 10) || PAGE_SIZE;
 // un jeton, pas une couleur : le surligneur change d'encre avec le thème
 const HIGHLIGHTER = 'var(--highlighter)';
 const NEUTRAL_COLOR = 'var(--ink-faint)';
@@ -146,7 +152,7 @@ let state = {
 
 const queryFor = (page) => ({
   page,
-  limit: PAGE_SIZE,
+  limit: taillePage(),
   sort: state.sort,
   status: state.status,
   category: state.category,
@@ -909,6 +915,18 @@ $('close-settings').addEventListener('click', () => reglages.fermer());
 preferences.surChangement((valeurs) =>
   appliquerApparence(valeurs?.apparence, { poserCrayon: setCrayon })
 );
+
+// la taille de page aussi, mais la première annonce (au chargement) précède
+// la première liste : la relire là ferait une requête pour rien
+// — et « pas encore annoncée » n'est pas « annoncée sans valeur » : un
+// serveur plus ancien ne connaît pas ce réglage
+const PAS_ENCORE = Symbol('pas encore annoncée');
+let parPageConnu = PAS_ENCORE;
+preferences.surChangement((valeurs) => {
+  const parPage = valeurs?.liste?.parPage;
+  if (parPageConnu !== PAS_ENCORE && parPage !== parPageConnu) refresh({ page: 1 });
+  parPageConnu = parPage;
+});
 
 const misesAJour = initMisesAJour({
   lireSysteme: api.fetchSysteme,

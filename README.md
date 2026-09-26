@@ -136,13 +136,14 @@ tant que `CORS_ORIGIN` n'est pas défini.
 - **Clavier** : `n` saisir · `/` chercher · `j`/`k` naviguer · `x` cocher · `e` modifier ·
   `r`/`R` reporter · `m` ma journée · `s` choisir · `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
 - **Réglages** : apparence (thème papier, carnet de nuit ou comme Windows, densité,
-  taille du texte, grain du papier, traits au crayon), vue d'ouverture (statut, échéance, tri) et mise à jour. Ils vivent
+  taille du texte, grain du papier, traits au crayon), vue d'ouverture (statut, échéance, tri),
+  tâches par page et mise à jour. Ils vivent
   dans la base, comme le reste ; l'apparence est en plus mise en miroir dans le
   stockage local pour être reposée avant même la réponse du serveur
 - **Recherche** (titre + description, étapes comprises) — raccourci `/`
 - **Tri** : par création, par échéance ou par priorité
 - **Tri, filtres et recherche côté serveur** : ils portent sur toute la base, pas sur la page affichée
-- **Pagination** déterministe côté serveur (5 par page)
+- **Pagination** déterministe côté serveur — 5, 10, 20 ou 50 tâches par page (Réglages)
 - **Statistiques** live (total / faites / restantes, et compte par catégorie)
 - **États** : vide, chargement (skeleton), erreur (toast)
 - **Traits dessinés** : chaque montage produit un croquis unique qui frémit (« boil ») ; les tâches terminées sont barrées d'un trait de stylo, la catégorie active est surlignée, la jauge d'avancement est hachurée

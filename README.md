@@ -132,8 +132,8 @@ tant que `CORS_ORIGIN` n'est pas défini.
   les déplace tous d'un coup, chacun à son heure, et se défait par « Annuler »
 - **Clavier** : `n` saisir · `/` chercher · `j`/`k` naviguer · `x` cocher · `e` modifier ·
   `r`/`R` reporter · `m` ma journée · `Suppr` supprimer · `Ctrl+K` palette de commandes (`↑`/`↓` pour choisir, `Entrée` pour lancer)
-- **Réglages** : apparence (densité, taille du texte, grain du papier, traits au
-  crayon), vue d'ouverture (statut, échéance, tri) et mise à jour. Ils vivent
+- **Réglages** : apparence (thème papier, carnet de nuit ou comme Windows, densité,
+  taille du texte, grain du papier, traits au crayon), vue d'ouverture (statut, échéance, tri) et mise à jour. Ils vivent
   dans la base, comme le reste ; l'apparence est en plus mise en miroir dans le
   stockage local pour être reposée avant même la réponse du serveur
 - **Recherche** (titre + description, étapes comprises) — raccourci `/`
@@ -375,11 +375,11 @@ npm run test:ui   # Vitest + happy-dom sur les modules du navigateur
 Le navigateur charge drawably depuis `/vendor/drawably` ; en test, `vitest.config.js`
 redirige cet alias vers `node_modules/drawably`.
 
-Les deux commandes mesurent la couverture et **échouent sous le seuil** : 85 % des
-lignes côté API, 88 % côté interface. Ces seuils sont posés juste sous le niveau
-atteint — ils empêchent de redescendre, ils ne récompensent rien. La couverture des
-branches de l'interface est à 79 %, sous la barre des 80 % que se donne le projet :
-c'est une dette connue, écrite dans `vitest.config.js`.
+Les deux commandes mesurent la couverture et **échouent sous le seuil** : 90 % des
+lignes côté API, 91 % côté interface. Ces seuils sont posés juste sous le niveau
+atteint — ils empêchent de redescendre, ils ne récompensent rien. Les branches de
+l'interface ont passé la barre des 80 % que se donne le projet ; les seuils exacts
+vivent dans `package.json` et `vitest.config.js`.
 
 ---
 

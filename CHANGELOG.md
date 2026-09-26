@@ -18,6 +18,11 @@ des postes déjà installés.
   tout reposait sur un clic « Sauvegarder » qu'on oublie. Les Réglages, section
   « Données », disent où elles se trouvent. Une base qui repart vide n'est pas
   copiée : elle chasserait une à une les copies qui contiennent encore tout.
+- **Un carnet de nuit.** Réglages → Apparence → Thème : « Papier », « Carnet de
+  nuit » (papier bleu-noir, encre pâle) ou « Comme Windows », qui bascule en
+  même temps que le système, Cahier ouvert. Le surligneur passe à l'ocre et les
+  couleurs de catégorie s'éclaircissent, pour que rien ne se perde dans le
+  fond. Le thème est reposé dès l'ouverture : pas d'éclair crème avant la nuit.
 
 ### Corrigé
 

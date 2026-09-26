@@ -5,7 +5,7 @@
    --------------------------------------------------------------------------- */
 
 import * as api from './api.js';
-import { appliquerApparence, restaurerApparence } from './apparence.js';
+import { appliquerApparence, restaurerApparence, suivreLeSysteme } from './apparence.js';
 import { initDragDrop } from './dragdrop.js';
 import {
   accorderOuverture,
@@ -44,14 +44,15 @@ import {
   formatDate,
   isToday,
   greetingForHour,
-  safeColor,
+  encreDeCategorie,
   toIso,
   toLocalDatetimeInput,
   toast,
 } from './util.js';
 
 const PAGE_SIZE = 5;
-const HIGHLIGHTER = '#f3d15b';
+// un jeton, pas une couleur : le surligneur change d'encre avec le thème
+const HIGHLIGHTER = 'var(--highlighter)';
 const NEUTRAL_COLOR = 'var(--ink-faint)';
 const SEARCH_DEBOUNCE_MS = 150;
 const PRIORITY_LABELS = { high: 'haute', medium: 'moyenne', low: 'basse' };
@@ -390,7 +391,7 @@ const renderCategories = () => {
       categoryRow(
         category.name,
         category.name,
-        safeColor(category.color, NEUTRAL_COLOR),
+        encreDeCategorie(category.color, NEUTRAL_COLOR),
         counts.get(category.name) || 0
       )
     );
@@ -445,7 +446,7 @@ const renderTaskItem = (task) => {
   li.draggable = state.sort === 'manual';
 
   const category = state.categories.find((c) => c.name === task.category);
-  const categoryColor = safeColor(category?.color, NEUTRAL_COLOR);
+  const categoryColor = encreDeCategorie(category?.color, NEUTRAL_COLOR);
   const formattedDate = formatDate(task.dueDate);
   const status = dueStatus(task.dueDate);
 
@@ -865,6 +866,7 @@ document.querySelectorAll('.modal').forEach(bindBackdrop);
 // le miroir local, pour que la page ne s'ouvre pas dans une mise en page qu'on
 // verrait changer une fraction de seconde plus tard
 restaurerApparence({ poserCrayon: setCrayon });
+suivreLeSysteme({});
 
 sketchAll();
 updateGreeting();

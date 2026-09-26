@@ -24,6 +24,16 @@ const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
  */
 export const safeColor = (value, fallback) => (HEX_COLOR.test(String(value)) ? value : fallback);
 
+/**
+ * La couleur d'une catégorie telle qu'elle doit s'afficher.
+ *
+ * Elle a été choisie sur du papier crème : un bleu nuit y est lisible, pas sur
+ * le carnet de nuit. Le thème fixe donc la part d'encre à y mêler — nulle le
+ * jour, où la couleur ressort telle quelle.
+ */
+export const encreDeCategorie = (value, fallback) =>
+  `color-mix(in srgb, ${safeColor(value, fallback)}, var(--ink) var(--melange-categorie, 0%))`;
+
 const sameDay = (a, b) =>
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&

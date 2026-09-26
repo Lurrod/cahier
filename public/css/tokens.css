@@ -56,6 +56,38 @@
    racine par js/apparence.js ; tout se joue ici, en redéfinissant des jetons.
    --------------------------------------------------------------------------- */
 
+/* Carnet de nuit : papier bleu-noir, encre pâle. Le surligneur passe à l'ocre :
+   un jaune vif sous une encre claire rendrait le texte surligné illisible.
+   `color-scheme` fait suivre les contrôles natifs (listes, dates, barres de
+   défilement), que les jetons n'atteignent pas. */
+:root[data-nuit='on'] {
+  color-scheme: dark;
+
+  --paper: #1a1e29;
+  --paper-sheet: #212634;
+  --paper-deep: #151821;
+  --rule-line: rgba(196, 208, 240, 0.06);
+  --rule-strong: rgba(196, 208, 240, 0.12);
+
+  --ink: #dde3f3;
+  --ink-soft: #a7b0cb;
+  --ink-faint: #6c758f;
+  --graphite: #9d968c;
+  --red-pen: #f07d6b;
+  --green-pen: #6fc493;
+  --highlighter: #8a6a1c;
+
+  /* part d'encre pâle mêlée aux couleurs de catégorie, choisies sur papier
+     clair : sans elle, le bleu nuit par défaut se perdrait dans le fond */
+  --melange-categorie: 45%;
+}
+
+/* le grain multiplie : sur un fond sombre il ne ferait qu'assombrir */
+:root[data-nuit='on'] .paper-grain {
+  mix-blend-mode: screen;
+  opacity: 0.12;
+}
+
 /* Densité : le pas du quadrillage sert d'unité verticale, resserrer l'un
    resserre tout le reste avec lui. */
 :root[data-densite='compact'] {

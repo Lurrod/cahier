@@ -274,6 +274,17 @@ describe('chargement initial', () => {
   });
 });
 
+describe('thème', () => {
+  test('la catégorie active est surlignée à l’encre du thème, pas d’un jaune figé', async () => {
+    await boot();
+
+    // un jaune vif en dur resterait sous l'encre pâle du carnet de nuit, et
+    // rendrait le nom de la catégorie illisible
+    const surligne = document.querySelector('.cat-name[data-sketch="highlight"]');
+    expect(surligne.dataset.stroke).toBe('var(--highlighter)');
+  });
+});
+
 describe('recherche', () => {
   test('envoie le terme au serveur après le délai de frappe', async () => {
     await boot();

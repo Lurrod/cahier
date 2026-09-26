@@ -91,3 +91,17 @@ describe('normaliserPreferences', () => {
     });
   });
 });
+
+describe('le thème', () => {
+  test('s’ouvre sur le papier : un changement de version ne plonge personne dans le noir', () => {
+    expect(DEFAUTS.apparence.theme).toBe('papier');
+  });
+
+  test.each(['papier', 'nuit', 'systeme'])('accepte « %s »', (theme) => {
+    expect(normaliserPreferences({ apparence: { theme } }).apparence.theme).toBe(theme);
+  });
+
+  test('un thème inconnu retombe sur le papier', () => {
+    expect(normaliserPreferences({ apparence: { theme: 'fluo' } }).apparence.theme).toBe('papier');
+  });
+});

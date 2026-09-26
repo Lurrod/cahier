@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
   dueStatus,
+  encreDeCategorie,
   escapeHtml,
   formatDate,
   greetingForHour,
@@ -28,6 +29,23 @@ describe('escapeHtml', () => {
   test('rend une chaîne vide pour null et undefined', () => {
     expect(escapeHtml(null)).toBe('');
     expect(escapeHtml(undefined)).toBe('');
+  });
+});
+
+describe('encreDeCategorie', () => {
+  test('mêle la couleur à l’encre du thème, dans la proportion que le thème fixe', () => {
+    // le jour, la proportion est nulle et la couleur ressort telle quelle ; la
+    // nuit, l'encre pâle l'éclaircit, sans quoi le bleu nuit par défaut
+    // disparaîtrait sur le papier sombre
+    expect(encreDeCategorie('#1f2f5c', 'repli')).toBe(
+      'color-mix(in srgb, #1f2f5c, var(--ink) var(--melange-categorie, 0%))'
+    );
+  });
+
+  test('ne laisse passer qu’une couleur reconnue', () => {
+    expect(encreDeCategorie('red; outline: 9999px solid #000', 'var(--ink-faint)')).toBe(
+      'color-mix(in srgb, var(--ink-faint), var(--ink) var(--melange-categorie, 0%))'
+    );
   });
 });
 

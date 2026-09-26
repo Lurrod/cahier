@@ -19,6 +19,8 @@ const taskList = $('task-list');
  *   removeTask: (task: object) => Promise<void>,
  *   postponeTask: (task: object, cible: 'demain'|'semaine') => Promise<void>,
  *   toggleMyDay: (task: object) => Promise<void>,
+ *   basculerSelection: (task: object) => void,
+ *   viderSelection: () => boolean,
  *   openPalette: () => void,
  *   closePalette: () => void,
  *   focusSearch: () => void,
@@ -34,6 +36,8 @@ export const initKeyboard = ({
   removeTask,
   postponeTask,
   toggleMyDay,
+  basculerSelection,
+  viderSelection,
   openPalette,
   closePalette,
   focusSearch,
@@ -125,6 +129,17 @@ export const initKeyboard = ({
           e.preventDefault();
           toggleMyDay(cursorTask);
         }
+        break;
+      case 's':
+        if (cursorTask) {
+          e.preventDefault();
+          basculerSelection(cursorTask);
+        }
+        break;
+      case 'Escape':
+        // les modales ont déjà eu leur tour : Échap ne vide la sélection
+        // que lorsqu'aucune n'est ouverte
+        if (viderSelection()) e.preventDefault();
         break;
       case 'Delete':
       case 'Backspace':

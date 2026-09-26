@@ -90,6 +90,25 @@ const mutate = (url, method, body) => {
     return { modified: cible.size };
   }
 
+  if (method === 'POST' && url === '/tasks/bulk') {
+    const pris = new Set(body.ids);
+    const champ = {
+      complete: { completed: true },
+      uncomplete: { completed: false },
+      category: { category: body.value },
+      priority: { priority: body.value },
+    }[body.action];
+    if (body.action === 'delete') {
+      server.tasks.forEach((t, index) => {
+        if (pris.has(t._id)) server.trash.push({ index, task: t });
+      });
+      server.tasks = server.tasks.filter((t) => !pris.has(t._id));
+    } else {
+      server.tasks = server.tasks.map((t) => (pris.has(t._id) ? { ...t, ...champ } : t));
+    }
+    return { modified: pris.size };
+  }
+
   if (method === 'PATCH' && url.endsWith('/order')) {
     return { message: 'ordre mis à jour' };
   }
@@ -207,6 +226,15 @@ beforeEach(() => {
       const method = options.method || 'GET';
       server.calls.push({ url, method, body: options.body ? JSON.parse(options.body) : null });
 
+      if (server.failBulk && url === '/tasks/bulk') {
+        server.failBulk = false;
+        return Promise.resolve({
+          ok: false,
+          status: 400,
+          json: async () => ({ error: 'Trop d’identifiants' }),
+        });
+      }
+
       if (server.failNextPost && method === 'POST' && url === '/tasks') {
         server.failNextPost = false;
         return Promise.resolve({
@@ -271,6 +299,295 @@ describe('chargement initial', () => {
 
     const done = document.querySelector('.task.is-done .task-title');
     expect(done.dataset.sketched).toBe('strike');
+  });
+});
+
+describe('sélection', () => {
+  const ligne = (titre) =>
+    [...document.querySelectorAll('.task')].find((li) =>
+      li.querySelector('.task-title').textContent.includes(titre)
+    );
+  const ctrlClic = (el) =>
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }));
+  const barre = () => document.getElementById('barre-lot');
+  const lot = () => server.calls.filter((c) => c.method === 'POST' && c.url === '/tasks/bulk');
+  const press = (key) =>
+    document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+
+  test('la barre reste cachée tant que rien n’est pris', async () => {
+    await boot();
+
+    expect(barre().hidden).toBe(true);
+  });
+
+  test('Ctrl+clic prend une ligne et fait paraître la barre', async () => {
+    await boot();
+
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+
+    expect(ligne('Relire le brief').classList.contains('is-selected')).toBe(true);
+    expect(barre().hidden).toBe(false);
+    expect(document.getElementById('barre-lot-compte').textContent).toBe('1 tâche choisie');
+  });
+
+  test('un second Ctrl+clic la rend', async () => {
+    await boot();
+    const corps = ligne('Relire le brief').querySelector('.task-body');
+
+    ctrlClic(corps);
+    ctrlClic(corps);
+
+    expect(barre().hidden).toBe(true);
+  });
+
+  test('Ctrl+clic sur un bouton de la ligne garde le sens du bouton', async () => {
+    await boot();
+
+    // sélectionner en voulant ouvrir « Modifier » serait surprendre
+    ctrlClic(ligne('Relire le brief').querySelector('.edit'));
+
+    expect(barre().hidden).toBe(true);
+  });
+
+  test('« Rayer » part en un seul envoi, puis vide la sélection', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    ctrlClic(ligne('Arroser les plantes').querySelector('.task-body'));
+
+    document.querySelector('[data-lot="rayer"]').click();
+    await settle();
+
+    expect(lot()).toHaveLength(1);
+    expect(lot()[0].body).toEqual({
+      ids: ['id-Relire le brief', 'id-Arroser les plantes'],
+      action: 'complete',
+    });
+    expect(barre().hidden).toBe(true);
+    expect(document.querySelectorAll('.task.is-selected')).toHaveLength(0);
+  });
+
+  test('« Annuler » défait le lot', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    document.querySelector('[data-lot="rayer"]').click();
+    await settle();
+
+    document.querySelector('.toast-action').click();
+    await settle();
+
+    expect(lot().at(-1).body).toEqual({ ids: ['id-Relire le brief'], action: 'uncomplete' });
+    expect(ligne('Relire le brief').classList.contains('is-done')).toBe(false);
+  });
+
+  test('supprimer en lot puis annuler rend chaque tâche', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    ctrlClic(ligne('Arroser les plantes').querySelector('.task-body'));
+
+    document.querySelector('[data-lot="supprimer"]').click();
+    await settle();
+    expect(titles()).toEqual([]);
+
+    document.querySelector('.toast-action').click();
+    await settle();
+
+    const restaurees = server.calls.filter((c) => c.url.endsWith('/restore'));
+    expect(restaurees).toHaveLength(2);
+    expect(titles()).toHaveLength(2);
+  });
+
+  test('ranger la sélection dans une catégorie', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    const menu = document.getElementById('barre-lot-categorie');
+
+    menu.dispatchEvent(new Event('focus'));
+    menu.value = 'Perso';
+    menu.dispatchEvent(new Event('change'));
+    await settle();
+
+    expect(lot()[0].body).toEqual({
+      ids: ['id-Relire le brief'],
+      action: 'category',
+      value: 'Perso',
+    });
+    // le menu revient sur son invite : il sert de bouton, pas de réglage
+    expect(menu.selectedIndex).toBe(0);
+  });
+
+  test('le menu des catégories est à jour dès que la barre paraît', async () => {
+    await boot();
+
+    // les catégories arrivent après l'amorçage : un menu rempli une fois pour
+    // toutes au démarrage resterait vide, sauf pour qui passe par le focus
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+
+    const noms = [...document.querySelectorAll('#barre-lot-categorie option')].map(
+      (o) => o.textContent
+    );
+    expect(noms).toContain('Perso');
+  });
+
+  test('« Sans catégorie » retire la catégorie', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    const menu = document.getElementById('barre-lot-categorie');
+
+    menu.dispatchEvent(new Event('focus'));
+    menu.value = '∅';
+    menu.dispatchEvent(new Event('change'));
+    await settle();
+
+    expect(lot()[0].body.value).toBe('');
+  });
+
+  test('reporter la sélection à demain passe par le report en bloc', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+
+    document.querySelector('[data-lot="demain"]').click();
+    await settle();
+
+    const patch = server.calls.find((c) => c.method === 'PATCH' && c.url === '/tasks/due');
+    expect(patch.body.items).toHaveLength(1);
+    expect(patch.body.items[0].id).toBe('id-Relire le brief');
+  });
+
+  test('`s` prend la ligne du curseur, Échap vide la sélection', async () => {
+    await boot();
+
+    press('j');
+    press('s');
+    expect(ligne('Relire le brief').classList.contains('is-selected')).toBe(true);
+
+    press('Escape');
+    expect(barre().hidden).toBe(true);
+  });
+
+  test('mettre la sélection dans ma journée, puis annuler', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+
+    document.querySelector('[data-lot="journee"]').click();
+    await settle();
+    const poses = server.calls.filter((c) => c.method === 'PUT' && c.body?.myDay !== undefined);
+    expect(poses).toHaveLength(1);
+    expect(typeof poses[0].body.myDay).toBe('string');
+
+    document.querySelector('.toast-action').click();
+    await settle();
+
+    // la tâche n'était dans aucune journée : l'annulation l'en retire
+    const retrait = server.calls.filter((c) => c.method === 'PUT').at(-1);
+    expect(retrait.body).toEqual({ myDay: null });
+  });
+
+  test('changer la priorité de la sélection, puis annuler tâche par tâche', async () => {
+    server.tasks = [task('Relire le brief', { priority: 'low' }), task('Arroser les plantes')];
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    ctrlClic(ligne('Arroser les plantes').querySelector('.task-body'));
+    const menu = document.getElementById('barre-lot-priorite');
+
+    menu.value = 'high';
+    menu.dispatchEvent(new Event('change'));
+    await settle();
+    expect(lot()[0].body).toMatchObject({ action: 'priority', value: 'high' });
+
+    document.querySelector('.toast-action').click();
+    await settle();
+
+    // chacune retrouve SA priorité d'avant, pas une valeur commune
+    const remises = server.calls.filter((c) => c.method === 'PUT').map((c) => c.body);
+    expect(remises).toEqual([{ priority: 'low' }, { priority: '' }]);
+  });
+
+  test('« Sans priorité » efface la priorité', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    const menu = document.getElementById('barre-lot-priorite');
+
+    menu.value = '∅';
+    menu.dispatchEvent(new Event('change'));
+    await settle();
+
+    expect(lot()[0].body.value).toBe('');
+  });
+
+  test('annuler un report rend sa date à chacune, et l’absence de date aussi', async () => {
+    const hier = new Date(Date.now() - 86400000).toISOString();
+    server.tasks = [task('Relire le brief', { dueDate: hier }), task('Arroser les plantes')];
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    ctrlClic(ligne('Arroser les plantes').querySelector('.task-body'));
+
+    document.querySelector('[data-lot="demain"]').click();
+    await settle();
+    document.querySelector('.toast-action').click();
+    await settle();
+
+    const remises = server.calls.filter((c) => c.method === 'PATCH' && c.url === '/tasks/due');
+    expect(remises.at(-1).body.items).toEqual([{ id: 'id-Relire le brief', dueDate: hier }]);
+    // le report en bloc refuse une date vide : la tâche sans date repasse à l'unité
+    const aLUnite = server.calls.find((c) => c.method === 'PUT');
+    expect(aLUnite).toMatchObject({
+      url: '/tasks/id-Arroser les plantes',
+      body: { dueDate: null },
+    });
+  });
+
+  test('le × vide la sélection sans rien envoyer', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+
+    document.querySelector('[data-lot="vider"]').click();
+
+    expect(barre().hidden).toBe(true);
+    expect(lot()).toHaveLength(0);
+  });
+
+  test('un lot refusé le dit, et la liste est relue', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    server.failBulk = true;
+    const lecturesAvant = calls().filter((u) => u.startsWith('/tasks?')).length;
+
+    document.querySelector('[data-lot="rayer"]').click();
+    await settle();
+
+    expect(document.querySelector('.toast.error').textContent).toContain('Trop d’identifiants');
+    expect(calls().filter((u) => u.startsWith('/tasks?')).length).toBeGreaterThan(lecturesAvant);
+  });
+
+  test('la palette prend toute la page', async () => {
+    await boot();
+    press('k', { ctrlKey: true });
+    const input = document.getElementById('palette-input');
+    input.value = 'Choisir';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    document.querySelector('#palette-list .palette-item').click();
+    await settle();
+
+    expect(document.getElementById('barre-lot-compte').textContent).toBe('2 tâches choisies');
+  });
+
+  test('Échap sans sélection ne fait rien de plus', async () => {
+    await boot();
+
+    expect(() => press('Escape')).not.toThrow();
+    expect(barre().hidden).toBe(true);
+  });
+
+  test('la sélection survit au rechargement de la liste', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+
+    // un rechargement redessine chaque ligne : la marque doit être reposée
+    document.querySelector('.task-myday').click();
+    await settle();
+
+    expect(ligne('Relire le brief').classList.contains('is-selected')).toBe(true);
   });
 });
 

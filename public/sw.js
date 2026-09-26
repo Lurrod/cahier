@@ -61,6 +61,7 @@ const COQUILLE = [
   '/js/preferences.js',
   '/js/reglages.js',
   '/js/report.js',
+  '/js/selection.js',
   '/js/serie.js',
   '/js/sketch.js',
   '/js/steps.js',

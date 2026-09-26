@@ -202,6 +202,7 @@
         <p class="margin-note">
           <span class="kbd">↵</span> ajouter · <span class="kbd">/</span> chercher ·
           <span class="kbd">Ctrl</span>+<span class="kbd">K</span> palette ·
+          <span class="kbd">Ctrl</span>+clic ou <span class="kbd">s</span> choisir plusieurs ·
           <span class="kbd">Esc</span> fermer
         </p>
       </aside>
@@ -313,6 +314,52 @@
         <div id="empty-state" class="empty hidden" data-sketch="card">
           <p class="empty-title">Page blanche.</p>
           <p class="empty-sub">Écris ta première tâche là-haut pour commencer.</p>
+        </div>
+
+        <div
+          id="barre-lot"
+          class="barre-lot"
+          role="toolbar"
+          aria-label="Actions sur les tâches choisies"
+          data-sketch="card"
+          hidden
+        >
+          <span id="barre-lot-compte" class="barre-lot-compte" aria-live="polite"></span>
+          <button type="button" class="btn" data-lot="rayer" data-sketch="button">Rayer</button>
+          <button type="button" class="btn" data-lot="journee" data-sketch="button">
+            ☀ Ma journée
+          </button>
+          <button type="button" class="btn" data-lot="demain" data-sketch="button">→ demain</button>
+          <span class="field" data-sketch="select">
+            <select id="barre-lot-categorie" aria-label="Ranger dans une catégorie"></select>
+          </span>
+          <span class="field" data-sketch="select">
+            <select id="barre-lot-priorite" aria-label="Changer la priorité">
+              <option value="" disabled selected>Priorité…</option>
+              <option value="high">Haute</option>
+              <option value="medium">Moyenne</option>
+              <option value="low">Basse</option>
+              <option value="∅">Sans priorité</option>
+            </select>
+          </span>
+          <button
+            type="button"
+            class="btn"
+            data-lot="supprimer"
+            data-sketch="button"
+            data-tone="danger"
+          >
+            Supprimer
+          </button>
+          <button
+            type="button"
+            class="barre-lot-vider"
+            data-lot="vider"
+            aria-label="Vider la sélection (Échap)"
+            title="Vider la sélection (Échap)"
+          >
+            ×
+          </button>
         </div>
 
         <nav class="pagination" aria-label="Pagination">

@@ -41,6 +41,10 @@ export const createTask = (task) =>
 export const updateTask = (id, patch) =>
   request(`tasks/${id}`, { method: 'PUT', body: JSON.stringify(patch) });
 
+/** Même action sur plusieurs tâches : complete, uncomplete, delete, category, priority. */
+export const bulk = (ids, action, value) =>
+  request('tasks/bulk', { method: 'POST', body: JSON.stringify({ ids, action, value }) });
+
 /** Chaque tâche reçoit sa propre échéance : `items` = [{id, dueDate}], 100 au plus. */
 export const replanifier = (items) =>
   request('tasks/due', { method: 'PATCH', body: JSON.stringify({ items }) });

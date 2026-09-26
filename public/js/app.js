@@ -24,6 +24,7 @@ import { reporter } from './report.js';
 import { lierAEcheance, recurrenceModifiee } from './serie.js';
 import { initPreferences } from './preferences.js';
 import { initReglages } from './reglages.js';
+import { initSelection } from './selection.js';
 import { resetSteps, toggleSteps } from './steps.js';
 import { initTrash } from './trash.js';
 
@@ -589,6 +590,7 @@ const render = () => {
   sketchAll(taskList);
   // le curseur clavier survit au rendu tant qu'il reste dans la page
   applyCursor();
+  selection.marquer();
 
   // le trait de biffage se mesure sur le titre une fois mis en page
   rendered.forEach(({ task, li }) => {
@@ -824,6 +826,15 @@ initDragDrop({
 
 const { openTrash } = initTrash({ restoreTask });
 
+const selection = initSelection({
+  taskList,
+  getTasks: () => state.tasks,
+  getCategories: () => state.categories,
+  api,
+  refresh,
+  toast,
+});
+
 const { openPalette, closePalette } = initPalette({
   focusTitle: () => taskTitleInput.focus(),
   focusSearch: () => searchInput.focus(),
@@ -831,6 +842,7 @@ const { openPalette, closePalette } = initPalette({
   ouvrirReglages: () => reglages.ouvrir(),
   sauvegarder: () => telechargerSauvegarde(),
   reporterRetards: postponeOverdue,
+  choisirLaPage: () => selection.prendreLaPage(),
 });
 
 const { applyCursor } = initKeyboard({
@@ -842,6 +854,8 @@ const { applyCursor } = initKeyboard({
   removeTask,
   postponeTask,
   toggleMyDay,
+  basculerSelection: (task) => selection.basculer(task),
+  viderSelection: () => selection.vider(),
   openPalette,
   closePalette,
   focusSearch: () => searchInput.focus(),

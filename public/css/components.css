@@ -1028,3 +1028,54 @@
 :root[data-crayon='off'] .rule {
   border-top: 1px solid var(--rule-strong);
 }
+
+/* -------------------------------- sélection ------------------------------- */
+
+/* une ligne prise est passée au surligneur, comme on coche une liste au feutre
+   avant de la traiter ; le curseur clavier garde son pointillé par-dessus */
+.task.is-selected {
+  background: color-mix(in srgb, var(--highlighter) 26%, var(--paper-sheet));
+}
+
+/* la barre suit la colonne des tâches et reste à portée en bas de l'écran,
+   sans recouvrir la marge ni les notes qui s'empilent à droite */
+.barre-lot {
+  position: sticky;
+  bottom: var(--gap-3);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-2);
+  margin-top: var(--gap-3);
+  padding: var(--gap-2) var(--gap-3);
+  background: var(--paper-sheet);
+  animation: ink-in 200ms var(--ease) both;
+}
+
+.barre-lot-compte {
+  margin-right: auto;
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+}
+
+/* un champ prend toute la largeur ailleurs ; ici il n'est qu'un bouton de plus */
+.barre-lot .field {
+  width: auto;
+  flex: 0 0 150px;
+}
+
+.barre-lot-vider {
+  border: 0;
+  background: none;
+  padding: 2px 8px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.barre-lot-vider:hover,
+.barre-lot-vider:focus-visible {
+  color: var(--red-pen);
+}

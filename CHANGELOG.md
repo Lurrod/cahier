@@ -18,6 +18,12 @@ des postes déjà installés.
   tout reposait sur un clic « Sauvegarder » qu'on oublie. Les Réglages, section
   « Données », disent où elles se trouvent. Une base qui repart vide n'est pas
   copiée : elle chasserait une à une les copies qui contiennent encore tout.
+- **Agir sur plusieurs tâches d'un coup.** `Ctrl`+clic sur des lignes, ou `s`
+  au clavier sur la ligne courante, et une barre paraît sous la liste : rayer,
+  mettre dans ma journée, reporter à demain, ranger dans une catégorie, changer
+  la priorité ou mettre à la corbeille. Chaque geste se défait par « Annuler ».
+  La sélection tient d'une page à l'autre ; `Échap` la vide, et `Ctrl+K` →
+  « Choisir toutes les tâches de la page » prend toute la page.
 - **Un carnet de nuit.** Réglages → Apparence → Thème : « Papier », « Carnet de
   nuit » (papier bleu-noir, encre pâle) ou « Comme Windows », qui bascule en
   même temps que le système, Cahier ouvert. Le surligneur passe à l'ocre et les

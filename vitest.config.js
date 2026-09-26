@@ -19,10 +19,10 @@ export default {
        * corbeille, palette) ne pèsent pas dans ce pourcentage.
        */
       thresholds: {
-        statements: 89,
-        branches: 80,
-        functions: 89,
-        lines: 91,
+        statements: 91,
+        branches: 84,
+        functions: 90,
+        lines: 93,
       },
     },
   },

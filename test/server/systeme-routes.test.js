@@ -52,6 +52,18 @@ describe('routes système', () => {
     expect(res.body.maj).toMatchObject({ etape: ETAPES.PRETE, version: '3.1.0' });
   });
 
+  test('GET nomme le dossier des sauvegardes automatiques', async () => {
+    const { etat } = etatBranche();
+
+    const res = await request(
+      monter(etat, {
+        dossierSauvegardes: 'C:\\Users\\quelquun\\AppData\\Roaming\\Cahier\\sauvegardes',
+      })
+    ).get('/systeme');
+
+    expect(res.body.dossierSauvegardes).toContain('sauvegardes');
+  });
+
   test('chercher relance une recherche et rend l’état', async () => {
     const { etat, appels } = etatBranche();
 

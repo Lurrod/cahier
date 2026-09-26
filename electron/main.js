@@ -59,6 +59,13 @@ process.env.CAHIER_DATA_DIR = DOSSIER_DONNEES;
 process.env.NODE_ENV = 'production';
 
 /**
+ * Les sauvegardes, à côté des données. Le serveur les poserait sinon à côté
+ * de son propre fichier, donc dans l'archive asar : l'écriture y échoue, et
+ * même hors archive, la mise à jour suivante effacerait le dossier.
+ */
+process.env.BACKUP_DIR = path.join(app.getPath('userData'), 'sauvegardes');
+
+/**
  * mongodb-memory-server veut un dossier de travail, et le calcule par défaut
  * à côté de son propre module — c'est-à-dire **dans l'archive asar**, qui est
  * un fichier. Toute écriture y échoue par ENOTDIR. On le renvoie donc dehors,

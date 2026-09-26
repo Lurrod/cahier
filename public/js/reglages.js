@@ -146,8 +146,19 @@ export const initReglages = ({
    *
    * Placé juste avant « À propos », qui nomme le dossier où vivent les
    * données : les deux gestes et l'endroit dont ils parlent se suivent.
+   *
+   * La copie quotidienne n'est annoncée que si le serveur nomme son dossier :
+   * un serveur plus ancien ne la fait pas, et la promettre serait mentir.
    */
-  const BLOC_DONNEES = `
+  const noteCopieQuotidienne = (dossier) =>
+    dossier
+      ? `<p class="reglages-note">
+          Une copie complète est aussi déposée chaque jour, sans rien demander ; les
+          quatorze dernières sont gardées dans <code>${escapeHtml(dossier)}</code>.
+        </p>`
+      : '';
+
+  const blocDonnees = (systeme) => `
     <section class="reglages-section" data-section="donnees">
       <h3 class="reglages-titre">Données</h3>
       <div class="reglages-donnees">
@@ -174,6 +185,7 @@ export const initReglages = ({
       <p class="reglages-note">
         Restaurer ajoute ce qui manque et ne touche à rien d’existant.
       </p>
+      ${noteCopieQuotidienne(systeme.dossierSauvegardes)}
     </section>
   `;
 
@@ -277,7 +289,7 @@ export const initReglages = ({
       ...Object.entries(schema.schema).map(([cle, reglages]) =>
         dessinerSection(cle, schema.sections[cle] || { titre: cle, note: null }, reglages, valeurs)
       ),
-      BLOC_DONNEES,
+      blocDonnees(systeme || {}),
       blocAPropos(systeme || {}),
     ].join('');
 

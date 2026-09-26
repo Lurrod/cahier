@@ -188,6 +188,34 @@ describe('page Réglages', () => {
     expect(document.body.textContent).toContain('Cahier\\db');
   });
 
+  test('la copie quotidienne est annoncée, avec son dossier', async () => {
+    const { reglages, preferences } = armer({
+      systeme: {
+        ...systeme(),
+        dossierSauvegardes: 'C:\\Users\\quelquun\\AppData\\Roaming\\Cahier\\sauvegardes',
+      },
+    });
+    await preferences.charger();
+
+    await reglages.ouvrir();
+
+    const donnees = document.querySelector('[data-section="donnees"]').textContent;
+    expect(donnees).toMatch(/chaque jour/);
+    expect(donnees).toContain('Cahier\\sauvegardes');
+  });
+
+  test('sans dossier connu, la copie quotidienne n’est pas promise', async () => {
+    // un serveur plus ancien ne dit rien du dossier : annoncer une copie qu'il
+    // ne fait pas serait pire que se taire
+    const { reglages, preferences } = armer();
+    await preferences.charger();
+
+    await reglages.ouvrir();
+
+    const donnees = document.querySelector('[data-section="donnees"]').textContent;
+    expect(donnees).not.toMatch(/chaque jour/);
+  });
+
   test('l’état de la mise à jour est dit en toutes lettres', async () => {
     const { reglages, preferences } = armer({
       systeme: systeme({ etape: 'prete', version: '3.1.0', progression: 100, message: null }),

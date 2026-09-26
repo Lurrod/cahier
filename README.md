@@ -311,6 +311,19 @@ npm run backup     # écrit backups/cahier-<horodatage>.json (serveur allumé)
 Le bouton **Sauvegarder** des Réglages, section « Données », télécharge le même JSON,
 et `Ctrl+K` → « sauvegarder » fait de même au clavier, sans avoir à ouvrir les Réglages.
 
+### Sauvegarde automatique
+
+Sans rien demander, le serveur dépose `auto-<horodatage>.json` dans le dossier des
+sauvegardes — `%APPDATA%\Cahier\sauvegardes` pour l'application installée, `backups/`
+depuis le dépôt (`BACKUP_DIR` pour le changer). Il le fait au démarrage, puis revérifie
+chaque heure : c'est la date de la dernière copie qui décide, pas un minuteur de 24 h qu'un
+redémarrage remettrait à zéro. Les **quatorze** plus récentes sont gardées.
+
+La rotation ne touche qu'à ses propres fichiers : une sauvegarde faite à la main, ou déposée
+avant un remplacement, n'est jamais effacée. Et **une base vide n'est pas copiée** — une base
+abîmée qui repartirait de zéro évincerait sinon, jour après jour, les copies qui contiennent
+encore tout.
+
 Pour remettre une sauvegarde :
 
 ```bash
@@ -470,6 +483,7 @@ cahier/
 │   ├── ordering.js         # Indexation fractionnaire de l'ordre manuel
 │   ├── reminders.js        # Heure d'un rappel et texte groupé
 │   ├── notify.js           # Toast Windows (le seul module qui parle à l'OS)
+│   ├── sauvegarde-auto.js  # Copie quotidienne et rotation des sauvegardes
 │   ├── listen.js           # Mise à l'écoute tolérante au port occupé
 │   ├── preferences.js      # Schéma fermé des réglages : défauts et validation
 │   ├── preferences-depot.js # Le document unique des réglages, dans Mongo

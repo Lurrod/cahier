@@ -35,9 +35,12 @@ presque tout le reste :
   données — comme pour n'importe quel fichier du dossier personnel.
 - **Les données ne sont pas chiffrées au repos.** Elles vivent en clair dans
   `%APPDATA%\Cahier\db`. Sur un poste partagé ou un disque non chiffré, c'est
-  le chiffrement du disque qui protège, pas l'application.
+  le chiffrement du disque qui protège, pas l'application. Il en va de même
+  des **copies quotidiennes** déposées dans `%APPDATA%\Cahier\sauvegardes` :
+  ce sont des exports complets, lisibles en clair, corbeille comprise.
 - **La désinstallation ne supprime pas les données.** `%APPDATA%\Cahier` reste
-  en place, délibérément : une mise à jour ne doit pas effacer un cahier.
+  en place, sauvegardes comprises, délibérément : une mise à jour ne doit pas
+  effacer un cahier.
 - **Exposer le serveur sur le réseau (`HOST=0.0.0.0`) revient à ouvrir la base
   à tout le réseau.** Ce n'est pas un mode pris en charge.
 

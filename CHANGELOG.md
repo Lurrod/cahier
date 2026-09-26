@@ -8,6 +8,25 @@ Une version se publie en étiquetant un commit : `npm version <niveau>` puis
 release brouillon ; publier ce brouillon dans GitHub est ce qui la rend visible
 des postes déjà installés.
 
+## [Non publié]
+
+### Ajouté
+
+- **Une sauvegarde chaque jour, sans y penser.** Au lancement, puis toutes les
+  heures tant qu'il reste ouvert, le Cahier dépose une copie complète si la
+  dernière date d'un jour ou plus, et garde les quatorze dernières. Jusqu'ici,
+  tout reposait sur un clic « Sauvegarder » qu'on oublie. Les Réglages, section
+  « Données », disent où elles se trouvent. Une base qui repart vide n'est pas
+  copiée : elle chasserait une à une les copies qui contiennent encore tout.
+
+### Corrigé
+
+- **Remplacer la base depuis l'application installée ne bute plus sur son
+  dossier de sauvegarde.** La copie de sécurité prise juste avant d'effacer
+  était écrite à côté du programme, dans une archive en lecture seule : le
+  remplacement échouait. Elle va désormais dans `%APPDATA%\Cahier\sauvegardes`,
+  qui survit aux mises à jour.
+
 ## [3.3.0] — 2026-09-23
 
 ### Ajouté

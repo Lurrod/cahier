@@ -14,6 +14,7 @@ const { NEEDS_RENUMBER, rankBetween, renumber } = require('./lib/ordering');
 const { messageGroupe, poserHeureDeRappel, RETARD_MAX_MS } = require('./lib/reminders');
 const { lireReplanification, replanifier } = require('./lib/replanifier');
 const { sendNotification } = require('./lib/notify');
+const { sauvegarderSiBesoin } = require('./lib/sauvegarde-auto');
 const { listenWithFallback } = require('./lib/listen');
 const { creerDepotPreferences } = require('./lib/preferences-depot');
 const { creerRoutesPreferences } = require('./lib/preferences-routes');
@@ -135,6 +136,10 @@ if (process.env.NODE_ENV !== 'test') {
       console.log('MongoDB connecté');
       await migrateSchema();
       await purgeDeletedTasks();
+      await sauvegardeAutomatique();
+      // l'application peut rester ouverte des jours : on revérifie chaque
+      // heure, c'est la date de la dernière copie qui décide d'en écrire une
+      setInterval(sauvegardeAutomatique, 60 * 60 * 1000).unref();
 
       // rattrapage : ce qui a sonné pendant l'arrêt sort en une seule fois
       await sweepReminders();
@@ -539,6 +544,23 @@ async function purgeDeletedTasks() {
     if (deletedCount) console.log(`Corbeille vidée : ${deletedCount} tâche(s)`);
   } catch (error) {
     console.error('Purge de la corbeille impossible:', error.message);
+  }
+}
+
+/**
+ * Copie quotidienne de la base, voir lib/sauvegarde-auto.js.
+ * Ne lève jamais : une sauvegarde manquée se signale, elle n'empêche ni le
+ * démarrage ni l'usage du Cahier.
+ */
+async function sauvegardeAutomatique() {
+  try {
+    const { ecrit } = await sauvegarderSiBesoin({
+      dossier: dossierSauvegardes(),
+      collecter: collectExport,
+    });
+    if (ecrit) console.log(`Sauvegarde automatique : ${ecrit}`);
+  } catch (error) {
+    console.error('Sauvegarde automatique impossible :', error.message);
   }
 }
 
@@ -1075,13 +1097,15 @@ app.get('/export', async (req, res) => {
 });
 
 /**
- * Dépose un instantané sur disque et renvoie son chemin.
  * Le dossier est relu à chaque appel, et non figé au chargement du module :
  * sinon la valeur dépendrait de l'ordre des `require` dans les tests, qui
  * doivent pouvoir écrire ailleurs que dans le dépôt.
  */
+const dossierSauvegardes = () => process.env.BACKUP_DIR || path.join(__dirname, 'backups');
+
+/** Dépose un instantané sur disque et renvoie son chemin. */
 const writeBackup = (prefix, payload) => {
-  const dir = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
+  const dir = dossierSauvegardes();
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, `${prefix}-${fileStamp()}.json`);
   fs.writeFileSync(file, JSON.stringify(payload, null, 2), 'utf8');
@@ -1275,6 +1299,7 @@ app.use(
     etat: etatMaj,
     version: require('./package.json').version,
     dossierDonnees: process.env.CAHIER_DATA_DIR || path.join(__dirname, 'data', 'db'),
+    dossierSauvegardes: dossierSauvegardes(),
     origineAutorisee: process.env.CORS_ORIGIN || null,
   })
 );

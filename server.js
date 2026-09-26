@@ -812,6 +812,12 @@ app.post('/tasks/bulk', async (req, res) => {
       const { modifiedCount } = await Task.updateMany(cible, { $set: { completed } });
       // même règle qu'à l'unité : cocher un dossier coche ce qu'il contient
       await Task.updateMany({ parentId: { $in: ids }, deletedAt: null }, { $set: { completed } });
+      // et une récurrente cochée fait naître la suivante — la garde
+      // d'idempotence de regenererRecurrence couvre une sélection recochée
+      if (completed) {
+        const series = await Task.find({ ...cible, 'recurrence.freq': { $nin: ['', null] } });
+        for (const serie of series) await regenererRecurrence(serie);
+      }
       return res.status(200).json({ modified: modifiedCount });
     }
 

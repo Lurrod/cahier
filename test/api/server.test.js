@@ -1494,6 +1494,35 @@ describe('Récurrence', () => {
     expect(suivante.completed).toBe(false);
   });
 
+  test('cocher une récurrente en lot crée aussi la suivante', async () => {
+    // sans cela, rayer une sélection arrêterait la série sans rien dire : elle
+    // ne revient pas la semaine suivante, et personne ne s'en aperçoit
+    const tache = await recurrente();
+
+    await request(app)
+      .post('/tasks/bulk')
+      .send({ ids: [tache._id], action: 'complete' });
+
+    const liste = await request(app).get('/tasks?limit=50&status=active');
+    const suivantes = liste.body.tasks.filter((t) => t.title === 'Sortir les poubelles');
+    expect(suivantes).toHaveLength(1);
+    expect(suivantes[0]._id).not.toBe(tache._id);
+  });
+
+  test('recocher en lot une récurrente déjà cochée ne dédouble pas la série', async () => {
+    const tache = await recurrente();
+    await request(app)
+      .post('/tasks/bulk')
+      .send({ ids: [tache._id], action: 'complete' });
+
+    await request(app)
+      .post('/tasks/bulk')
+      .send({ ids: [tache._id], action: 'complete' });
+
+    const liste = await request(app).get('/tasks?limit=50&status=active');
+    expect(liste.body.tasks.filter((t) => t.title === 'Sortir les poubelles')).toHaveLength(1);
+  });
+
   test('la suivante est calée sur l’échéance précédente, pas sur aujourd’hui', async () => {
     const tache = await recurrente({ dueDate: dans(-3) });
 

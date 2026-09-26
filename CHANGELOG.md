@@ -26,6 +26,10 @@ des postes déjà installés.
 
 ### Corrigé
 
+- **Cocher des tâches en lot par l'API ne coupe plus les séries.** Une tâche
+  récurrente cochée via `POST /tasks/bulk` ne faisait pas naître la suivante :
+  la série s'arrêtait sans rien dire. Le lot suit désormais la même règle qu'une
+  tâche cochée à l'unité.
 - **Remplacer la base depuis l'application installée ne bute plus sur son
   dossier de sauvegarde.** La copie de sécurité prise juste avant d'effacer
   était écrite à côté du programme, dans une archive en lecture seule : le

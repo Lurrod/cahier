@@ -122,3 +122,11 @@ describe('le nombre de tâches par page', () => {
     expect(normaliserPreferences({ liste: { parPage: 1000 } }).liste.parPage).toBe('5');
   });
 });
+
+describe('l’arrière-plan', () => {
+  test('garde le Cahier dans la zone de notification, sans l’inscrire au démarrage', () => {
+    // garder : c'est ce qui fait sonner les rappels fenêtre fermée ;
+    // démarrer avec Windows : personne n'y est inscrit sans l'avoir demandé
+    expect(DEFAUTS.arrierePlan).toEqual({ garder: true, demarrage: false });
+  });
+});

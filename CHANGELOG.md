@@ -10,7 +10,20 @@ des postes déjà installés.
 
 ## [Non publié]
 
+### Modifié
+
+- **Fermer la fenêtre ne ferme plus le Cahier : il se range dans la zone de
+  notification, et les rappels continuent de sonner.** Jusqu'ici, un rappel ne
+  partait que fenêtre ouverte — ranger l'application, c'était taire ses
+  rappels, justement quand on comptait sur eux. Un clic sur l'icône rouvre le
+  Cahier ; « Quitter » dans son menu le ferme pour de bon. Pour retrouver
+  l'ancien comportement : Réglages → En arrière-plan.
+
 ### Ajouté
+
+- **Ouvrir le Cahier avec Windows.** Réglages → En arrière-plan : il démarre
+  discrètement dans la zone de notification à l'ouverture de session, prêt à
+  rappeler. Désactivé tant qu'on ne l'a pas demandé.
 
 - **Une sauvegarde chaque jour, sans y penser.** Au lancement, puis toutes les
   heures tant qu'il reste ouvert, le Cahier dépose une copie complète si la

@@ -1168,7 +1168,8 @@ app.delete('/categories/:name', async (req, res) => {
 
 // tout ce qui touche aux préférences vit dans lib/ : ce fichier ne fait que
 // poser le dépôt sur la connexion Mongo et monter le routeur
-app.use('/preferences', creerRoutesPreferences({ depot: creerDepotPreferences(mongoose) }));
+const depotPreferences = creerDepotPreferences(mongoose);
+app.use('/preferences', creerRoutesPreferences({ depot: depotPreferences }));
 
 /**
  * L'état de la mise à jour, écrit par le processus principal d'Electron et lu
@@ -1231,6 +1232,8 @@ module.exports.dbReady = dbReady;
 module.exports.stopServices = stopServices;
 // rempli par electron/main.js : lui seul sait où en est la mise à jour
 module.exports.etatMaj = etatMaj;
+// lu et suivi par electron/main.js, pour la zone de notification
+module.exports.preferences = depotPreferences;
 // exposée pour les tests : la migration doit pouvoir être rejouée à volonté
 module.exports.migrateSchema = migrateSchema;
 // exposé pour les tests : le balayage prend son horloge et son émetteur en

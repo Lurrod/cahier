@@ -38,6 +38,9 @@ presque tout le reste :
   le chiffrement du disque qui protège, pas l'application. Il en va de même
   des **copies quotidiennes** déposées dans `%APPDATA%\Cahier\sauvegardes` :
   ce sont des exports complets, lisibles en clair, corbeille comprise.
+- **« Ouvrir avec Windows » inscrit le Cahier au démarrage de la session**
+  (clé `Run` de l'utilisateur, sans droits d'administrateur). Décocher le
+  réglage l'en retire. Rien n'est inscrit sans ce geste.
 - **La désinstallation ne supprime pas les données.** `%APPDATA%\Cahier` reste
   en place, sauvegardes comprises, délibérément : une mise à jour ne doit pas
   effacer un cahier.

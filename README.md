@@ -280,6 +280,20 @@ Le Cahier n'a ni compte, ni service distant : un rappel ne peut partir que **tan
 serveur tourne**. C'est la limite du modèle, et elle est assumée — aucun réglage ne laisse
 croire que vous serez prévenu l'application éteinte.
 
+C'est pourquoi l'application installée **ne quitte pas quand on ferme sa fenêtre** : elle se
+range dans la zone de notification, d'où un clic la rouvre, et les rappels continuent de
+sonner. « Quitter » dans le menu de l'icône la ferme pour de bon. Deux réglages, section « En
+arrière-plan » :
+
+- **Rester dans la zone de notification à la fermeture** (coché par défaut) — décoché, fermer
+  la fenêtre quitte le Cahier, comme avant la 3.4 ;
+- **Ouvrir avec Windows** (décoché par défaut) — le Cahier démarre caché à l'ouverture de
+  session, prêt à rappeler. Il n'est jamais lancé caché sans icône pour le retrouver.
+
+La pose d'une mise à jour lève la garde avant d'installer : une fenêtre retenue dans la zone
+de notification bloquerait l'installation. La logique vit dans `lib/arriere-plan.js`,
+testable sans ouvrir de fenêtre.
+
 Le serveur balaie la base toutes les soixante secondes. Les rappels dont l'heure est passée
 pendant un arrêt sortent **groupés en une seule notification** au démarrage suivant : douze
 toasts d'affilée seraient du bruit. Passé sept jours, un rappel est classé sans être affiché —
@@ -522,6 +536,7 @@ cahier/
 │   ├── preferences-depot.js # Le document unique des réglages, dans Mongo
 │   ├── preferences-routes.js # GET/PUT /preferences, et le schéma servi à la page
 │   ├── maj-etat.js         # État de la mise à jour, partagé Electron ↔ page
+│   ├── arriere-plan.js     # Zone de notification, fermeture, ouverture avec Windows
 │   ├── systeme-routes.js   # GET /systeme et les actions, gardées par l'origine
 │   └── launcher.js         # Ce que le lanceur doit décider
 ├── electron/

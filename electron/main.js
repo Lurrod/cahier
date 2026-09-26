@@ -10,12 +10,13 @@
      — où trouver mongod (rien ne doit se télécharger au premier lancement).
    --------------------------------------------------------------------------- */
 
-const { app, BrowserWindow, shell, dialog, Menu } = require('electron');
+const { app, BrowserWindow, shell, dialog, Menu, Tray } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
 const { configurerMisesAJour } = require('../lib/updates');
+const { creerArrierePlan } = require('../lib/arriere-plan');
 const { BINAIRE_CACHE } = require('../lib/mongod-version');
 
 /** Une seule instance : deux processus ouvriraient la même base, et WiredTiger la verrouille. */
@@ -85,6 +86,27 @@ let fenetre = null;
 let serveur = null;
 let arretEnCours = false;
 
+/** Ramène la fenêtre, qu'elle soit réduite ou rangée dans la zone de notification. */
+const montrer = () => {
+  if (!fenetre) return;
+  if (fenetre.isMinimized()) fenetre.restore();
+  fenetre.show();
+  fenetre.focus();
+};
+
+/**
+ * Fermer la fenêtre la range au lieu de quitter : les rappels ne sonnent que
+ * tant que le Cahier tourne. Voir lib/arriere-plan.js.
+ */
+const arrierePlan = creerArrierePlan({
+  app,
+  Tray,
+  Menu,
+  icone: path.join(__dirname, 'icon.ico'),
+  enPaquet: EN_PAQUET,
+  montrer,
+});
+
 /**
  * Relâche Mongo — une fois, quelle que soit la porte de sortie.
  *
@@ -98,7 +120,12 @@ const arreterServices = () => {
   return serveur.stopServices();
 };
 
-const creerFenetre = (url) => {
+/**
+ * @param {string} url
+ * @param {{cachee?: boolean}} [options] ouverte sans se montrer : lancement
+ *   par l'ouverture de session, le Cahier attend dans la zone de notification
+ */
+const creerFenetre = (url, { cachee = false } = {}) => {
   fenetre = new BrowserWindow({
     width: 1280,
     height: 860,
@@ -116,7 +143,10 @@ const creerFenetre = (url) => {
     },
   });
 
-  fenetre.once('ready-to-show', () => fenetre.show());
+  fenetre.once('ready-to-show', () => {
+    if (!cachee) fenetre.show();
+  });
+  fenetre.on('close', (event) => arrierePlan.surFermeture(event, fenetre));
   fenetre.on('closed', () => {
     fenetre = null;
   });
@@ -140,7 +170,12 @@ app.whenReady().then(async () => {
     // fenêtre ouverte sur une application sans base ne montrerait que des
     // erreurs
     const [url] = await Promise.all([serveur.ready, serveur.dbReady]);
-    creerFenetre(url);
+
+    // avant la fenêtre : c'est le réglage qui dit si elle s'ouvre cachée.
+    // Illisible, il retombe sur les défauts — garder, sans rien inscrire
+    arrierePlan.appliquer(await serveur.preferences.lire().catch(() => null));
+    serveur.preferences.surEcriture((valeurs) => arrierePlan.appliquer(valeurs));
+    creerFenetre(url, { cachee: arrierePlan.demarrerCache(process.argv) });
 
     // après la fenêtre, jamais avant : la mise à jour ne doit pas retarder
     // l'ouverture du Cahier, ni l'empêcher si le réseau est absent.
@@ -151,7 +186,12 @@ app.whenReady().then(async () => {
       updater: autoUpdater,
       etat: serveur.etatMaj,
       enPaquet: EN_PAQUET,
-      arreterServices,
+      // la pose lève d'abord la garde de la fenêtre : retenue dans la zone de
+      // notification, elle empêcherait l'installation de se faire
+      arreterServices: () => {
+        arrierePlan.autoriserDepart();
+        return arreterServices();
+      },
     });
   } catch (error) {
     dialog.showErrorBox(
@@ -162,16 +202,12 @@ app.whenReady().then(async () => {
   }
 });
 
-app.on('second-instance', () => {
-  if (fenetre) {
-    if (fenetre.isMinimized()) fenetre.restore();
-    fenetre.focus();
-  }
-});
+// relancer le Cahier alors qu'il attend dans la zone de notification le ramène
+app.on('second-instance', montrer);
 
 app.on('window-all-closed', () => {
-  // fermer la fenêtre ferme le Cahier : il n'a rien à faire en arrière-plan
-  // une fois qu'on l'a rangé
+  // la fenêtre n'est vraiment fermée que lorsqu'on quitte, ou quand le
+  // réglage « rester dans la zone de notification » est décoché
   app.quit();
 });
 

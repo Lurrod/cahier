@@ -84,3 +84,34 @@ describe('Préférences', () => {
     expect(total).toBe(1);
   });
 });
+
+describe('Préférences — le processus principal suit les changements', () => {
+  test('un réglage enregistré est annoncé à qui s’est abonné', async () => {
+    const annonces = [];
+    const desabonner = app.preferences.surEcriture((valeurs) => annonces.push(valeurs));
+
+    await request(app)
+      .put('/preferences')
+      .send({ arrierePlan: { demarrage: true } });
+    desabonner();
+
+    // la page n'a aucun pont vers Electron : c'est par le serveur, qui tourne
+    // dans le même processus, que la zone de notification apprend le réglage
+    expect(annonces).toHaveLength(1);
+    expect(annonces[0].arrierePlan.demarrage).toBe(true);
+  });
+
+  test('un abonné qui échoue ne fait pas échouer l’enregistrement', async () => {
+    const desabonner = app.preferences.surEcriture(() => {
+      throw new Error('icône introuvable');
+    });
+
+    const res = await request(app)
+      .put('/preferences')
+      .send({ arrierePlan: { garder: false } });
+    desabonner();
+
+    expect(res.status).toBe(200);
+    expect(res.body.arrierePlan.garder).toBe(false);
+  });
+});

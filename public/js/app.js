@@ -629,6 +629,11 @@ const reglages = initReglages({
   importer: api.importerSauvegarde,
   rafraichir: () => refresh(),
   toast,
+  // le bandeau est créé plus bas : on passe par lui au moment de l'appel
+  majEnDirect: {
+    surEtat: (abonne) => misesAJour.surEtat(abonne),
+    rafraichir: () => misesAJour.rafraichir(),
+  },
 });
 
 $('open-settings').addEventListener('click', () => reglages.ouvrir());
@@ -657,6 +662,8 @@ const misesAJour = initMisesAJour({
   // lue à chaque fois : elle peut changer pendant que le Cahier est ouvert
   prevenir: () => preferences.valeurs()?.misesAJour?.prevenir !== false,
   toast,
+  // relu à chaque battement : une fermeture par Échap ne prévient personne
+  regarde: () => $('settings-modal').classList.contains('active'),
 });
 
 /**

@@ -507,6 +507,11 @@ donc toujours au serveur d'abord — il tourne sur `127.0.0.1`, dans le même
 processus que la fenêtre — et ne puise dans sa copie que lorsque celui-ci est
 éteint.
 
+La page lit l'état **une fois la minute au repos, toutes les secondes et demie** pendant une
+recherche, un téléchargement, ou tant que les Réglages sont ouverts — la progression y avance
+sous les yeux. Un seul module interroge le serveur (`public/js/maj.js`) ; la page Réglages
+s'abonne à ses lectures au lieu de poser la même question de son côté.
+
 La proposition paraît **dans la page**, sur un bandeau de papier, et non dans une
 boîte de dialogue Windows. La fenêtre étant bridée (`contextIsolation: true`,
 aucun préchargement privilégié), le processus principal ne peut rien lui envoyer

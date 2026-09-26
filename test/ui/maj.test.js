@@ -23,12 +23,19 @@ const { initMisesAJour } = await import('../../public/js/maj.js');
  */
 const fauxMinuteur = () => ({
   battements: new Map(),
+  intervalles: new Map(),
   suivant: 0,
   arrets: 0,
-  poser(rappel) {
+  poser(rappel, ms) {
     this.suivant += 1;
     this.battements.set(this.suivant, rappel);
+    this.intervalles.set(this.suivant, ms);
     return this.suivant;
+  },
+  /** L'intervalle du battement en cours, s'il y en a un. */
+  cadence() {
+    const [id] = [...this.battements.keys()];
+    return id === undefined ? null : this.intervalles.get(id);
   },
   retirer(id) {
     this.arrets += 1;
@@ -192,8 +199,9 @@ describe('bandeau de mise à jour', () => {
 
     // une application installée annonce « recherche » le temps que le réseau
     // réponde : y voir une raison de se taire condamnerait le bandeau à ne
-    // jamais rien annoncer de la session
-    expect(minuteur.arrets).toBe(0);
+    // jamais rien annoncer de la session. Le rythme change en recherche
+    // (plus rapide), mais un battement reste toujours armé
+    expect(minuteur.battements.size).toBe(1);
     expect(visible()).toBe(true);
   });
 
@@ -279,5 +287,85 @@ describe('bandeau de mise à jour', () => {
     // la page Réglages lit ce que le bandeau a déjà demandé, plutôt que de
     // poser la même question au serveur
     expect(bandeau.dernier()).toMatchObject({ version: '3.0.1', maj: { etape: 'prete' } });
+  });
+});
+
+describe('bandeau de mise à jour — en temps réel', () => {
+  const telechargement = (progression) =>
+    systeme({ etape: 'telechargement', version: '3.16.0', progression });
+
+  test('au repos, il interroge une fois la minute', async () => {
+    const { bandeau, minuteur } = armer([systeme({ etape: 'repos' })]);
+
+    await bandeau.rafraichir();
+
+    expect(minuteur.cadence()).toBe(60_000);
+  });
+
+  test('pendant un téléchargement, il suit de près', async () => {
+    // une minute entre deux lectures, c'était une progression qui sautait de
+    // 0 à 100 %, et une version prête annoncée jusqu'à une minute en retard
+    const { bandeau, minuteur } = armer([telechargement(10)]);
+
+    await bandeau.rafraichir();
+
+    expect(minuteur.cadence()).toBe(1500);
+  });
+
+  test('pendant une recherche aussi', async () => {
+    const { bandeau, minuteur } = armer([systeme({ etape: 'recherche' })]);
+
+    await bandeau.rafraichir();
+
+    expect(minuteur.cadence()).toBe(1500);
+  });
+
+  test('la version prête, il revient au pas lent, sans laisser deux battements', async () => {
+    const { bandeau, minuteur } = armer([telechargement(90), systeme({ etape: 'prete' })]);
+
+    await bandeau.rafraichir();
+    await bandeau.rafraichir();
+
+    expect(minuteur.cadence()).toBe(60_000);
+    expect(minuteur.battements.size).toBe(1);
+  });
+
+  test('tant que les Réglages sont ouverts, il suit de près même au repos', async () => {
+    let ouverts = true;
+    const { bandeau, minuteur } = armer([systeme({ etape: 'repos' })], {
+      regarde: () => ouverts,
+    });
+
+    await bandeau.rafraichir();
+    expect(minuteur.cadence()).toBe(1500);
+
+    // fermés par Échap ou d'un clic à côté : personne ne le lui dit, il le
+    // constate au battement suivant
+    ouverts = false;
+    await bandeau.rafraichir();
+    expect(minuteur.cadence()).toBe(60_000);
+  });
+
+  test('chaque lecture est annoncée à qui s’est abonné', async () => {
+    const { bandeau } = armer([telechargement(10), telechargement(55)]);
+    const vus = [];
+    bandeau.surEtat((s) => vus.push(s.maj.progression));
+
+    await bandeau.rafraichir();
+    await bandeau.rafraichir();
+
+    expect(vus).toEqual([10, 55]);
+  });
+
+  test('un abonné en panne n’arrête ni le bandeau ni les autres', async () => {
+    const { bandeau } = armer([telechargement(10)]);
+    const vus = [];
+    bandeau.surEtat(() => {
+      throw new Error('page Réglages démontée');
+    });
+    bandeau.surEtat((s) => vus.push(s.maj.etape));
+
+    await expect(bandeau.rafraichir()).resolves.toBeTruthy();
+    expect(vus).toEqual(['telechargement']);
   });
 });

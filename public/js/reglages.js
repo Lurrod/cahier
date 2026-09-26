@@ -47,6 +47,9 @@ const heure = (iso) => {
  * @param {(contenu: object) => Promise<{tasks: number}>} deps.importer fusionne une sauvegarde
  * @param {() => Promise<void>} deps.rafraichir relit la liste après une fusion
  * @param {(message: string, variante?: string) => void} deps.toast
+ * @param {{surEtat: Function, rafraichir: Function}} [deps.majEnDirect] le
+ *   bandeau de mise à jour, seul à interroger le serveur : la page s'abonne à
+ *   ses lectures pour que la ligne d'état avance sous les yeux
  */
 export const initReglages = ({
   preferences,
@@ -56,6 +59,7 @@ export const initReglages = ({
   importer,
   rafraichir = () => Promise.resolve(),
   toast,
+  majEnDirect = null,
 }) => {
   const modale = $('settings-modal');
   const corps = $('settings-body');
@@ -314,6 +318,22 @@ export const initReglages = ({
     sketchAll(corps);
   };
 
+  /**
+   * Abonnée une fois pour toutes, à la première ouverture : le bandeau n'existe
+   * pas encore quand cette page s'initialise. Fermée, la page n'a plus de
+   * ligne d'état, et direEtatMaj ne fait rien.
+   */
+  let abonnee = false;
+  const suivreEnDirect = () => {
+    if (!majEnDirect) return;
+    if (!abonnee) {
+      majEnDirect.surEtat(direEtatMaj);
+      abonnee = true;
+    }
+    // la page ouverte fait battre le bandeau plus vite : autant commencer tout de suite
+    majEnDirect.rafraichir();
+  };
+
   const ouvrir = async () => {
     try {
       await construire();
@@ -323,6 +343,7 @@ export const initReglages = ({
       return;
     }
     openModal(modale);
+    suivreEnDirect();
   };
 
   const fermer = () => closeModal(modale);

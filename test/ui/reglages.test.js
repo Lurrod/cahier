@@ -520,3 +520,70 @@ describe('sauvegarde et restauration', () => {
     expect(HTML).not.toContain('id="import-file"');
   });
 });
+
+describe('page Réglages — la mise à jour en direct', () => {
+  /** Un faux bandeau : c'est lui qui lit le serveur, la page s'y abonne. */
+  const fauxDirect = () => {
+    const abonnes = [];
+    return {
+      abonnes,
+      rafraichis: 0,
+      surEtat(abonne) {
+        abonnes.push(abonne);
+        return () => abonnes.splice(abonnes.indexOf(abonne), 1);
+      },
+      rafraichir() {
+        this.rafraichis += 1;
+        return Promise.resolve(null);
+      },
+      annoncer(etat) {
+        abonnes.forEach((a) => a(etat));
+      },
+    };
+  };
+
+  test('la progression du téléchargement avance sous les yeux', async () => {
+    const direct = fauxDirect();
+    const { reglages, preferences } = armer({ deps: { majEnDirect: direct } });
+    await preferences.charger();
+    await reglages.ouvrir();
+
+    direct.annoncer(systeme({ etape: 'telechargement', version: '3.16.0', progression: 42 }));
+
+    // jusqu'ici, la ligne restait sur ce qu'elle avait lu à l'ouverture
+    expect(document.getElementById('reglages-maj-etat').textContent).toContain('42 %');
+  });
+
+  test('ouvrir la page réveille la lecture, pour suivre de près aussitôt', async () => {
+    const direct = fauxDirect();
+    const { reglages, preferences } = armer({ deps: { majEnDirect: direct } });
+    await preferences.charger();
+
+    await reglages.ouvrir();
+
+    expect(direct.rafraichis).toBe(1);
+  });
+
+  test('rouvrir la page ne s’abonne pas deux fois', async () => {
+    const direct = fauxDirect();
+    const { reglages, preferences } = armer({ deps: { majEnDirect: direct } });
+    await preferences.charger();
+
+    await reglages.ouvrir();
+    reglages.fermer();
+    await reglages.ouvrir();
+
+    expect(direct.abonnes).toHaveLength(1);
+  });
+
+  test('« Prête » fait paraître le bouton de redémarrage sans rouvrir la page', async () => {
+    const direct = fauxDirect();
+    const { reglages, preferences } = armer({ deps: { majEnDirect: direct } });
+    await preferences.charger();
+    await reglages.ouvrir();
+
+    direct.annoncer(systeme({ etape: 'prete', version: '3.16.0', progression: 100 }));
+
+    expect(document.getElementById('reglages-maj-installer').hidden).toBe(false);
+  });
+});

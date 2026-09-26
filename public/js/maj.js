@@ -16,6 +16,16 @@ import { $ } from './util.js';
 /** Une minute : assez pour ne rien manquer, assez peu pour ne rien coûter. */
 const INTERVALLE_MS = 60_000;
 
+/**
+ * Quand quelque chose bouge, ou que quelqu'un regarde : une minute entre deux
+ * lectures, c'était une progression qui sautait de 0 à 100 %, et une version
+ * prête annoncée jusqu'à une minute en retard.
+ */
+const INTERVALLE_RAPIDE_MS = 1500;
+
+/** Les étapes où l'état change d'une seconde à l'autre. */
+const EN_MOUVEMENT = ['recherche', 'telechargement'];
+
 /** Les seules étapes qui méritent d'interrompre la page. */
 const PARLANTES = ['prete', 'echec'];
 
@@ -28,7 +38,10 @@ const PARLANTES = ['prete', 'echec'];
  * @param {(message: string, variante?: string) => void} deps.toast
  * @param {{poser: Function, retirer: Function}} [deps.minuteur]
  * @param {number} [deps.intervalleMs]
- * @returns {{rafraichir: () => Promise<object|null>, dernier: () => object|null}}
+ * @param {() => boolean} [deps.regarde] vrai quand la page Réglages est à
+ *   l'écran : relu à chaque battement, car rien ne prévient d'une fermeture
+ *   par Échap ou d'un clic à côté
+ * @returns {{rafraichir: () => Promise<object|null>, dernier: () => object|null, surEtat: Function}}
  */
 export const initMisesAJour = ({
   lireSysteme,
@@ -45,6 +58,7 @@ export const initMisesAJour = ({
     retirer: (id) => clearInterval(id),
   },
   intervalleMs = INTERVALLE_MS,
+  regarde = () => false,
 }) => {
   const bandeau = $('maj-banner');
   const titre = $('maj-title');
@@ -55,6 +69,18 @@ export const initMisesAJour = ({
   /** Dernier état lu, partagé avec la page Réglages pour ne pas demander deux fois. */
   let dernierEtat = null;
   let battement = null;
+  let cadence = null;
+  const abonnes = [];
+
+  /** Chaque lecture, à qui suit l'état — la page Réglages. */
+  const annoncer = (systeme) =>
+    abonnes.forEach((abonne) => {
+      try {
+        abonne(systeme);
+      } catch {
+        // un abonné en panne ne doit priver ni le bandeau ni les autres
+      }
+    });
   /** Ce que l'utilisateur a rangé à la main ne doit pas revenir au battement suivant. */
   let rangeALaMain = false;
 
@@ -81,6 +107,16 @@ export const initMisesAJour = ({
     if (battement === null) return;
     minuteur.retirer(battement);
     battement = null;
+    cadence = null;
+  };
+
+  /** Bat vite si quelque chose bouge ou si quelqu'un regarde, lentement sinon. */
+  const recadrer = (etape) => {
+    const voulue = EN_MOUVEMENT.includes(etape) || regarde() ? INTERVALLE_RAPIDE_MS : intervalleMs;
+    if (voulue === cadence) return;
+    arreter();
+    cadence = voulue;
+    battement = minuteur.poser(rafraichir, voulue);
   };
 
   /** Ce que le bandeau dit de chaque étape. Le silence est la règle. */
@@ -118,10 +154,13 @@ export const initMisesAJour = ({
       if (!systeme?.maj || systeme.maj.etape === 'inactive') {
         arreter();
         ranger();
+        annoncer(systeme);
         return systeme;
       }
 
       rendre(systeme.maj);
+      annoncer(systeme);
+      recadrer(systeme.maj.etape);
       return systeme;
     } catch {
       return null;
@@ -131,6 +170,9 @@ export const initMisesAJour = ({
   const demander = async (quoi) => {
     try {
       dernierEtat = await agir(quoi);
+      annoncer(dernierEtat);
+      // « Chercher » ouvre une recherche : la suivre de près sans attendre
+      if (dernierEtat?.maj) recadrer(dernierEtat.maj.etape);
     } catch (erreur) {
       toast(erreur.message, 'error');
     }
@@ -152,7 +194,14 @@ export const initMisesAJour = ({
     if (dernierEtat?.maj) rendre(dernierEtat.maj);
   });
 
+  cadence = intervalleMs;
   battement = minuteur.poser(rafraichir, intervalleMs);
 
-  return { rafraichir, arreter, dernier: () => dernierEtat };
+  /** @returns {() => void} de quoi se désabonner */
+  const surEtat = (abonne) => {
+    abonnes.push(abonne);
+    return () => abonnes.splice(abonnes.indexOf(abonne), 1);
+  };
+
+  return { rafraichir, arreter, dernier: () => dernierEtat, surEtat, agir: demander };
 };

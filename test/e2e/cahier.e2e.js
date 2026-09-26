@@ -185,3 +185,33 @@ test('une case cochée au clavier n’allume que la sienne', async () => {
   );
   expect(allumes).toBe(1);
 });
+
+test('la mise à jour se suit en direct, sans rouvrir les Réglages', async () => {
+  const page = await lancer();
+  // un profil de test ne cherche aucune mise à jour : on écrit l'état partagé
+  // à la place de l'updater, là où il l'écrirait (lib/maj-etat.js)
+  const poser = (etat) =>
+    cahier.evaluate((_, etat) => {
+      process.mainModule.require('../server.js').etatMaj.poser(etat);
+    }, etat);
+  await poser({ etape: 'repos' });
+  await page.reload();
+  await page.waitForSelector('#task-list', { state: 'attached' });
+  await page.locator('#open-settings').click();
+  const ligne = page.locator('#reglages-maj-etat');
+  await expect(ligne).toContainText('à jour');
+
+  await poser({ etape: 'telechargement', version: '3.16.0', progression: 30 });
+  await expect(ligne).toContainText('30 %', { timeout: 5000 });
+
+  await poser({ etape: 'telechargement', version: '3.16.0', progression: 80 });
+  await expect(ligne).toContainText('80 %', { timeout: 5000 });
+
+  await poser({ etape: 'prete', version: '3.16.0', progression: 100 });
+  await expect(ligne).toContainText('prête', { timeout: 5000 });
+  await expect(page.locator('#reglages-maj-installer')).toBeVisible();
+
+  // le bandeau l'annonce aussi, sans attendre la minute d'autrefois
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#maj-banner')).toBeVisible({ timeout: 5000 });
+});

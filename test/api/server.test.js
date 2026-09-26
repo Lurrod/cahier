@@ -1524,6 +1524,18 @@ describe('Récurrence', () => {
     expect(suivantes[0]._id).not.toBe(tache._id);
   });
 
+  test('rayer en lot dit quelles occurrences sont nées, pour qu’on puisse l’annuler', async () => {
+    const tache = await recurrente();
+
+    const res = await request(app)
+      .post('/tasks/bulk')
+      .send({ ids: [tache._id], action: 'complete' });
+
+    const liste = await request(app).get('/tasks?limit=50&status=active');
+    const suivante = liste.body.tasks.find((t) => t.title === 'Sortir les poubelles');
+    expect(res.body.suivantes).toEqual([suivante._id]);
+  });
+
   test('recocher en lot une récurrente déjà cochée ne dédouble pas la série', async () => {
     const tache = await recurrente();
     await request(app)
@@ -2237,6 +2249,23 @@ describe('Bilan', () => {
     await request(app).delete(`/tasks/${tache._id}`);
 
     expect((await bilan()).aujourdhui).toBe(0);
+  });
+
+  test('une étape déjà rayée garde sa date quand on coche le dossier', async () => {
+    const dossier = await creer('Devis');
+    const etape = await creer('Étape', { parentId: dossier._id });
+    await request(app).put(`/tasks/${etape._id}`).send({ completed: true });
+    const lundi = new Date(Date.now() - 3 * 86400000);
+    await mongoose.connection
+      .collection('tasks')
+      .updateOne({ title: 'Étape' }, { $set: { completedAt: lundi } });
+
+    await request(app).put(`/tasks/${dossier._id}`).send({ completed: true });
+    await request(app)
+      .post('/tasks/bulk')
+      .send({ ids: [dossier._id], action: 'complete' });
+
+    expect(new Date((await lire(etape._id)).completedAt).getTime()).toBe(lundi.getTime());
   });
 
   test('la migration ne prête aucune date aux tâches rayées avant elle', async () => {

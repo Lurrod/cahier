@@ -118,7 +118,10 @@ const mutate = (url, method, body) => {
     } else {
       server.tasks = server.tasks.map((t) => (pris.has(t._id) ? { ...t, ...champ } : t));
     }
-    return { modified: pris.size };
+    return {
+      modified: pris.size,
+      ...(body.action === 'complete' ? { suivantes: server.suivantes || [] } : {}),
+    };
   }
 
   if (method === 'PATCH' && url.endsWith('/order')) {
@@ -390,6 +393,21 @@ describe('sélection', () => {
 
     expect(lot().at(-1).body).toEqual({ ids: ['id-Relire le brief'], action: 'uncomplete' });
     expect(ligne('Relire le brief').classList.contains('is-done')).toBe(false);
+  });
+
+  test('annuler un « Rayer » retire aussi les occurrences qu’il a fait naître', async () => {
+    await boot();
+    ctrlClic(ligne('Relire le brief').querySelector('.task-body'));
+    server.suivantes = ['nee-de-la-serie'];
+    document.querySelector('[data-lot="rayer"]').click();
+    await settle();
+
+    document.querySelector('.toast-action').click();
+    await settle();
+
+    // sans cela, la série se retrouve en double : l'originale décochée, et la
+    // suivante née du « Rayer » qu'on vient d'annuler
+    expect(lot().at(-1).body).toEqual({ ids: ['nee-de-la-serie'], action: 'delete' });
   });
 
   test('supprimer en lot puis annuler rend chaque tâche', async () => {

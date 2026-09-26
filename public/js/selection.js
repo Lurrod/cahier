@@ -156,12 +156,21 @@ export const initSelection = ({
   const idsDe = (prises) => prises.map((t) => t._id);
 
   const ACTIONS = {
-    rayer: () =>
-      agir({
-        faire: (prises) => api.bulk(idsDe(prises), 'complete'),
+    rayer: () => {
+      // les occurrences nées du « Rayer » : l'annuler doit les retirer aussi,
+      // sans quoi une série se retrouve en double
+      let nees = [];
+      return agir({
+        faire: async (prises) => {
+          nees = (await api.bulk(idsDe(prises), 'complete'))?.suivantes || [];
+        },
         dire: (n) => `${pluriel(n, 'tâche')} rayée${n > 1 ? 's' : ''}.`,
-        defaire: (prises) => api.bulk(idsDe(prises), 'uncomplete'),
-      }),
+        defaire: async (prises) => {
+          await api.bulk(idsDe(prises), 'uncomplete');
+          if (nees.length) await api.bulk(nees, 'delete');
+        },
+      });
+    },
 
     journee: () =>
       agir({

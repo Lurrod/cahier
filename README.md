@@ -367,8 +367,10 @@ ce que ferait une migration, les requêtes ne font aucune différence entre « a
 `export.ics` ne porte que les tâches datées qui restent à faire, étapes comprises. Chaque
 événement garde l'identifiant de sa tâche (`UID`) : un agenda qui réimporte le fichier met
 l'événement à jour au lieu de le dédoubler. La récurrence devient une `RRULE` (les jours
-ouvrés, `BYDAY=MO,TU,WE,TH,FR`) et le rappel une alarme. Une mensuelle posée un 31 est la
-seule divergence : le Cahier la ramène au dernier jour des mois courts, un agenda la saute.
+ouvrés, `BYDAY=MO,TU,WE,TH,FR`) et le rappel une alarme. Deux divergences, connues : une
+mensuelle posée un 31, que le Cahier ramène au dernier jour des mois courts et qu'un agenda
+saute ; et « tous les N jours ouvrés » (N > 1), qui n'a pas d'équivalent iCalendar et part
+sans règle — un seul événement plutôt qu'une série que l'agenda dessinerait autrement.
 
 `export.csv` neutralise les cellules commençant par `=`, `+`, `-` ou `@` en les préfixant
 d'une apostrophe — sans quoi un tableur les exécuterait comme des formules. C'est pourquoi le

@@ -839,18 +839,24 @@ app.post('/tasks/bulk', async (req, res) => {
         { $set: { completedAt: completed ? new Date() : null } }
       );
       const { modifiedCount } = await Task.updateMany(cible, { $set: { completed } });
-      // même règle qu'à l'unité : cocher un dossier coche ce qu'il contient
+      // même règle qu'à l'unité : cocher un dossier coche ce qu'il contient —
+      // et seules les étapes qui changent d'état changent de date
       await Task.updateMany(
-        { parentId: { $in: ids }, deletedAt: null },
+        { parentId: { $in: ids }, deletedAt: null, completed: !completed },
         { $set: { completed, completedAt: completed ? new Date() : null } }
       );
-      // et une récurrente cochée fait naître la suivante — la garde
-      // d'idempotence de regenererRecurrence couvre une sélection recochée
-      if (completed) {
-        const series = await Task.find({ ...cible, 'recurrence.freq': { $nin: ['', null] } });
-        for (const serie of series) await regenererRecurrence(serie);
+      if (!completed) return res.status(200).json({ modified: modifiedCount });
+
+      // une récurrente cochée fait naître la suivante — la garde d'idempotence
+      // de regenererRecurrence couvre une sélection recochée. Les nées sont
+      // rendues : sans elles, annuler le lot laisserait la série en double
+      const series = await Task.find({ ...cible, 'recurrence.freq': { $nin: ['', null] } });
+      const suivantes = [];
+      for (const serie of series) {
+        const nee = await regenererRecurrence(serie);
+        if (nee) suivantes.push(String(nee._id));
       }
-      return res.status(200).json({ modified: modifiedCount });
+      return res.status(200).json({ modified: modifiedCount, suivantes });
     }
 
     if (action === 'delete') {
@@ -1013,8 +1019,10 @@ app.put('/tasks/:id', async (req, res) => {
     // un parent peut porter du travail propre au-delà de ses étapes, et le
     // cocher à la place de l'utilisateur serait décider pour lui
     if (Object.hasOwn(champs, 'completed') && !task.parentId) {
+      // seules les étapes qui changent d'état changent de date : une étape
+      // rayée lundi le reste quand on coche le dossier jeudi
       await Task.updateMany(
-        { parentId: task._id, deletedAt: null },
+        { parentId: task._id, deletedAt: null, completed: !champs.completed },
         { $set: { completed: champs.completed, completedAt: champs.completedAt } }
       );
     }

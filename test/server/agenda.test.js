@@ -72,6 +72,12 @@ describe('regleDeRecurrence', () => {
     expect(regleDeRecurrence({ until: null, ...recurrence })).toBe(attendu);
   });
 
+  test('« tous les N jours ouvrés » n’a pas d’équivalent : pas de règle plutôt qu’une fausse', () => {
+    // FREQ=WEEKLY;INTERVAL=2;BYDAY=… voudrait dire « chaque jour ouvré, une
+    // semaine sur deux » — l'agenda montrerait une autre série que le Cahier
+    expect(regleDeRecurrence({ freq: 'weekdays', interval: 2, until: null })).toBeNull();
+  });
+
   test('porte la fin de série', () => {
     expect(
       regleDeRecurrence({ freq: 'daily', interval: 1, until: '2026-12-31T23:00:00.000Z' })

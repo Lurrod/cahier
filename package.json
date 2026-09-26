@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.1",
     "electron": "^32.3.3",
     "electron-builder": "^24.13.3",
     "happy-dom": "^20.14.5",

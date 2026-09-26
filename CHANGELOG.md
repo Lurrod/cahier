@@ -8,7 +8,44 @@ Une version se publie en étiquetant un commit : `npm version <niveau>` puis
 release brouillon ; publier ce brouillon dans GitHub est ce qui la rend visible
 des postes déjà installés.
 
-## [Non publié]
+## [3.15.0] — 2026-09-27
+
+> Les versions 3.4.0 à 3.14.0 n'ont pas été publiées séparément : chacune
+> note un changement, et toutes parviennent ensemble aux postes installés
+> avec la 3.15.0.
+
+### Ajouté
+
+- **Noter une idée de partout : `Ctrl+Alt+N`.** Depuis n'importe quelle
+  application, le Cahier revient, le curseur dans la saisie. Il se désactive
+  dans Réglages → En arrière-plan.
+
+## [3.14.0] — 2026-09-27
+
+### Ajouté
+
+- **Les notifications se cliquent.** Un rappel ouvre sa tâche dans « Modifier »,
+  même si elle n'est pas sur la page affichée ; le point du matin ouvre la vue
+  « aujourd'hui ». Jusqu'ici, cliquer une notification ne menait nulle part.
+
+## [3.13.0] — 2026-09-26
+
+### Ajouté
+
+- **Le point du matin.** Réglages → En arrière-plan : à l'heure choisie (7 h à
+  10 h), une notification dit ce qui tombe aujourd'hui, ce qui est en retard et
+  ce qui est dans ma journée. Une fois par jour, même si le Cahier est relancé ;
+  jamais passé midi ; et rien les matins où rien n'attend. Désactivé tant
+  qu'on ne l'a pas demandé.
+
+## [3.12.0] — 2026-09-26
+
+### Ajouté
+
+- **Tous les raccourcis sur une fiche.** `?` (ou `Ctrl+K` → « Raccourcis
+  clavier ») montre chaque touche et ce qu'elle fait, rangées par usage.
+
+## [3.11.0] — 2026-09-26
 
 ### Modifié
 
@@ -21,57 +58,72 @@ des postes déjà installés.
 
 ### Ajouté
 
-- **Les notifications se cliquent.** Un rappel ouvre sa tâche dans « Modifier »,
-  même si elle n'est pas sur la page affichée ; le point du matin ouvre la vue
-  « aujourd'hui ». Jusqu'ici, cliquer une notification ne menait nulle part.
-- **Noter une idée de partout : `Ctrl+Alt+N`.** Depuis n'importe quelle
-  application, le Cahier revient, le curseur dans la saisie. Il se désactive
-  dans Réglages → En arrière-plan.
-- **Tous les raccourcis sur une fiche.** `?` (ou `Ctrl+K` → « Raccourcis
-  clavier ») montre chaque touche et ce qu'elle fait, rangées par usage.
-- **Le point du matin.** Réglages → En arrière-plan : à l'heure choisie (7 h à
-  10 h), une notification dit ce qui tombe aujourd'hui, ce qui est en retard et
-  ce qui est dans ma journée. Une fois par jour, même si le Cahier est relancé ;
-  jamais passé midi ; et rien les matins où rien n'attend. Désactivé tant
-  qu'on ne l'a pas demandé.
 - **Ouvrir le Cahier avec Windows.** Réglages → En arrière-plan : il démarre
   discrètement dans la zone de notification à l'ouverture de session, prêt à
   rappeler. Désactivé tant qu'on ne l'a pas demandé.
 
-- **Une sauvegarde chaque jour, sans y penser.** Au lancement, puis toutes les
-  heures tant qu'il reste ouvert, le Cahier dépose une copie complète si la
-  dernière date d'un jour ou plus, et garde les quatorze dernières. Jusqu'ici,
-  tout reposait sur un clic « Sauvegarder » qu'on oublie. Les Réglages, section
-  « Données », disent où elles se trouvent. Une base qui repart vide n'est pas
-  copiée : elle chasserait une à une les copies qui contiennent encore tout.
+## [3.10.1] — 2026-09-26
+
+### Corrigé
+
+- **Annuler un « Rayer » en lot ne laisse plus une série en double.** Rayer
+  une tâche récurrente fait naître l'occurrence suivante ; « Annuler » ne
+  décochait que l'originale, et la série se retrouvait deux fois dans la liste.
+  L'occurrence née du « Rayer » part désormais avec lui.
+- **« Tous les N jours ouvrés » ne part plus faux dans l'agenda.** L'export le
+  traduisait en « chaque jour ouvré, une semaine sur N ». Sans équivalent dans
+  le format des agendas, la tâche part désormais sans répétition : un
+  événement juste plutôt qu'une série fausse.
+
+## [3.10.0] — 2026-09-26
+
+### Ajouté
+
+- **Dupliquer une tâche, étapes comprises.** `d` au clavier, ou « Dupliquer »
+  dans « Modifier » : la valise, la clôture du mois, la liste de courses se
+  refont en un geste. La copie reprend tout ce qui décrit la tâche — notes,
+  catégorie, priorité, étiquettes, échéance, répétition, rappel — et ses
+  étapes repartent décochées. « Annuler » la met à la corbeille.
+
+## [3.9.0] — 2026-09-26
+
+### Ajouté
+
+- **Les tâches datées dans votre agenda.** Réglages → Données → « Vers un agenda
+  (.ics) », ou `Ctrl+K` → « Exporter vers un agenda » : un fichier à importer
+  dans Outlook, Google Agenda ou Thunderbird, avec les répétitions et les
+  rappels. Le réimporter plus tard met les événements à jour au lieu de les
+  dédoubler.
+
+## [3.8.0] — 2026-09-26
+
+### Ajouté
+
+- **Le bilan de la semaine.** Sous la jauge d'avancement, sept barres disent ce
+  qui a été rayé chaque jour, et le sous-titre salue le travail du jour (« 2
+  rayées aujourd'hui »). Le Cahier retient désormais la date à laquelle une
+  tâche est rayée ; celles rayées avant cette version n'en ont pas, et ne sont
+  pas comptées plutôt que d'être toutes datées d'aujourd'hui.
+
+## [3.7.0] — 2026-09-26
+
+### Ajouté
+
+- **Choisir combien de tâches tient une page.** Réglages → La liste : 5, 10, 20
+  ou 50. Cinq restent le défaut ; au-delà, on tourne moins les pages.
+
+## [3.6.0] — 2026-09-26
+
+### Ajouté
+
 - **Agir sur plusieurs tâches d'un coup.** `Ctrl`+clic sur des lignes, ou `s`
   au clavier sur la ligne courante, et une barre paraît sous la liste : rayer,
   mettre dans ma journée, reporter à demain, ranger dans une catégorie, changer
   la priorité ou mettre à la corbeille. Chaque geste se défait par « Annuler ».
   La sélection tient d'une page à l'autre ; `Échap` la vide, et `Ctrl+K` →
   « Choisir toutes les tâches de la page » prend toute la page.
-- **Dupliquer une tâche, étapes comprises.** `d` au clavier, ou « Dupliquer »
-  dans « Modifier » : la valise, la clôture du mois, la liste de courses se
-  refont en un geste. La copie reprend tout ce qui décrit la tâche — notes,
-  catégorie, priorité, étiquettes, échéance, répétition, rappel — et ses
-  étapes repartent décochées. « Annuler » la met à la corbeille.
-- **Les tâches datées dans votre agenda.** Réglages → Données → « Vers un agenda
-  (.ics) », ou `Ctrl+K` → « Exporter vers un agenda » : un fichier à importer
-  dans Outlook, Google Agenda ou Thunderbird, avec les répétitions et les
-  rappels. Le réimporter plus tard met les événements à jour au lieu de les
-  dédoubler.
-- **Le bilan de la semaine.** Sous la jauge d'avancement, sept barres disent ce
-  qui a été rayé chaque jour, et le sous-titre salue le travail du jour (« 2
-  rayées aujourd'hui »). Le Cahier retient désormais la date à laquelle une
-  tâche est rayée ; celles rayées avant cette version n'en ont pas, et ne sont
-  pas comptées plutôt que d'être toutes datées d'aujourd'hui.
-- **Choisir combien de tâches tient une page.** Réglages → La liste : 5, 10, 20
-  ou 50. Cinq restent le défaut ; au-delà, on tourne moins les pages.
-- **Un carnet de nuit.** Réglages → Apparence → Thème : « Papier », « Carnet de
-  nuit » (papier bleu-noir, encre pâle) ou « Comme Windows », qui bascule en
-  même temps que le système, Cahier ouvert. Le surligneur passe à l'ocre et les
-  couleurs de catégorie s'éclaircissent, pour que rien ne se perde dans le
-  fond. Le thème est reposé dès l'ouverture : pas d'éclair crème avant la nuit.
+
+## [3.5.1] — 2026-09-26
 
 ### Corrigé
 
@@ -79,6 +131,30 @@ des postes déjà installés.
   récurrente cochée via `POST /tasks/bulk` ne faisait pas naître la suivante :
   la série s'arrêtait sans rien dire. Le lot suit désormais la même règle qu'une
   tâche cochée à l'unité.
+
+## [3.5.0] — 2026-09-26
+
+### Ajouté
+
+- **Un carnet de nuit.** Réglages → Apparence → Thème : « Papier », « Carnet de
+  nuit » (papier bleu-noir, encre pâle) ou « Comme Windows », qui bascule en
+  même temps que le système, Cahier ouvert. Le surligneur passe à l'ocre et les
+  couleurs de catégorie s'éclaircissent, pour que rien ne se perde dans le
+  fond. Le thème est reposé dès l'ouverture : pas d'éclair crème avant la nuit.
+
+## [3.4.0] — 2026-09-26
+
+### Ajouté
+
+- **Une sauvegarde chaque jour, sans y penser.** Au lancement, puis toutes les
+  heures tant qu'il reste ouvert, le Cahier dépose une copie complète si la
+  dernière date d'un jour ou plus, et garde les quatorze dernières. Jusqu'ici,
+  tout reposait sur un clic « Sauvegarder » qu'on oublie. Les Réglages, section
+  « Données », disent où elles se trouvent. Une base qui repart vide n'est pas
+  copiée : elle chasserait une à une les copies qui contiennent encore tout.
+
+### Corrigé
+
 - **Remplacer la base depuis l'application installée ne bute plus sur son
   dossier de sauvegarde.** La copie de sécurité prise juste avant d'effacer
   était écrite à côté du programme, dans une archive en lecture seule : le

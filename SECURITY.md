@@ -4,8 +4,8 @@
 
 | Version | Correctifs de sécurité |
 | ------- | ---------------------- |
-| 3.3.x   | oui                    |
-| < 3.3   | non                    |
+| 3.15.x  | oui                    |
+| < 3.15  | non                    |
 
 Il n'y a pas de rétroportage : une version antérieure se remplace par la
 dernière.

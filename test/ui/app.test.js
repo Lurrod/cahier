@@ -154,6 +154,7 @@ const bodyFor = (url, method, body) => {
     return { tasks: server.children[id] || [], total: (server.children[id] || []).length };
   }
   if (url.startsWith('/tasks/stats')) return server.stats;
+  if (/^\/tasks\/[a-f0-9]{24}$/.test(url)) return server.tasks.find((t) => t._id === url.slice(7));
   if (url.startsWith('/tasks/trash')) {
     const tasks = server.trash.map((entry) => entry.task);
     return { tasks, total: tasks.length, totalPages: 1, currentPage: 1 };
@@ -168,6 +169,7 @@ const bodyFor = (url, method, body) => {
 // suivi, chaque test traînerait les écouteurs de tous les tests précédents,
 // qui rejoueraient leurs actions sur les données du test en cours.
 let bootListeners = [];
+let windowListeners = [];
 
 const boot = async () => {
   document.body.innerHTML = BODY;
@@ -183,8 +185,15 @@ const boot = async () => {
     bootListeners.push(args);
     add(...args);
   });
+  // même suivi pour window : l'ancre s'y écoute (hashchange)
+  const addWindow = window.addEventListener.bind(window);
+  const spyWindow = vi.spyOn(window, 'addEventListener').mockImplementation((...args) => {
+    windowListeners.push(args);
+    addWindow(...args);
+  });
   await import('../../public/js/app.js');
   spy.mockRestore();
+  spyWindow.mockRestore();
 
   await settle();
 };
@@ -251,6 +260,17 @@ beforeEach(() => {
         });
       }
 
+      if (method === 'GET' && /^\/tasks\/[a-f0-9]{24}$/.test(url)) {
+        const trouvee = server.tasks.find((t) => t._id === url.slice(7));
+        if (!trouvee) {
+          return Promise.resolve({
+            ok: false,
+            status: 404,
+            json: async () => ({ error: 'Tâche non trouvée' }),
+          });
+        }
+      }
+
       if (server.failNextPost && method === 'POST' && url === '/tasks') {
         server.failNextPost = false;
         return Promise.resolve({
@@ -276,6 +296,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
   bootListeners.forEach((args) => document.removeEventListener(...args));
   bootListeners = [];
+  windowListeners.forEach((args) => window.removeEventListener(...args));
+  windowListeners = [];
+  window.location.hash = '';
   document.body.innerHTML = '';
 });
 
@@ -819,6 +842,82 @@ describe('bilan', () => {
     await boot();
 
     expect(document.getElementById('bilan').hidden).toBe(true);
+  });
+});
+
+describe('ancre posée par le processus principal', () => {
+  const ID = '6ab7ef1cd86dcf1f05745db8';
+  const ancrer = async (hash) => {
+    window.location.hash = hash;
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await settle();
+  };
+
+  test('#tache ouvre la tâche dans « Modifier », même hors de la page affichée', async () => {
+    server.tasks = [task('Relire le brief'), task('Dentiste', { _id: ID })];
+    await boot();
+
+    await ancrer(`#tache=${ID}`);
+
+    // la tâche est relue au serveur : la liste n'en montre qu'une page
+    expect(calls()).toContain(`/tasks/${ID}`);
+    expect(document.getElementById('edit-modal').classList.contains('active')).toBe(true);
+    expect(document.getElementById('edit-title').value).toBe('Dentiste');
+  });
+
+  test('une tâche qui n’existe plus le dit, sans ouvrir de fenêtre vide', async () => {
+    await boot();
+
+    await ancrer(`#tache=${ID}`);
+
+    expect(document.getElementById('edit-modal').classList.contains('active')).toBe(false);
+    expect(document.querySelector('.toast.error').textContent).toContain('n’existe plus');
+  });
+
+  test('#vue montre l’horizon demandé', async () => {
+    await boot();
+
+    await ancrer('#vue=today');
+
+    const url = calls()
+      .filter((u) => u.startsWith('/tasks?'))
+      .at(-1);
+    expect(new URL(url, 'http://test').searchParams.get('due')).toBe('today');
+  });
+
+  test('#saisir met le curseur dans la saisie', async () => {
+    await boot();
+
+    await ancrer('#saisir');
+
+    expect(document.activeElement.id).toBe('task-title');
+  });
+
+  test('l’ancre est effacée une fois servie, pour qu’un second clic agisse encore', async () => {
+    await boot();
+
+    await ancrer('#saisir');
+
+    // sans cela, deux clics sur la même notification poseraient la même ancre,
+    // et le second ne déclencherait aucun hashchange
+    expect(window.location.hash).toBe('');
+  });
+
+  test('une ancre posée avant l’ouverture est servie au démarrage', async () => {
+    window.location.hash = '#saisir';
+
+    await boot();
+
+    expect(document.activeElement.id).toBe('task-title');
+  });
+
+  test('une ancre inconnue est laissée tranquille', async () => {
+    await boot();
+
+    await ancrer('#main');
+
+    // le lien d'évitement pointe sur #main : l'effacer casserait son saut
+    expect(window.location.hash).toBe('#main');
   });
 });
 

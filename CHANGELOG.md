@@ -21,6 +21,12 @@ des postes déjà installés.
 
 ### Ajouté
 
+- **Les notifications se cliquent.** Un rappel ouvre sa tâche dans « Modifier »,
+  même si elle n'est pas sur la page affichée ; le point du matin ouvre la vue
+  « aujourd'hui ». Jusqu'ici, cliquer une notification ne menait nulle part.
+- **Noter une idée de partout : `Ctrl+Alt+N`.** Depuis n'importe quelle
+  application, le Cahier revient, le curseur dans la saisie. Il se désactive
+  dans Réglages → En arrière-plan.
 - **Tous les raccourcis sur une fiche.** `?` (ou `Ctrl+K` → « Raccourcis
   clavier ») montre chaque touche et ce qu'elle fait, rangées par usage.
 - **Le point du matin.** Réglages → En arrière-plan : à l'heure choisie (7 h à

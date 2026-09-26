@@ -13,7 +13,9 @@ import {
   initFilters,
   showMyDayCount,
   showOverdueCount,
+  selectDue,
 } from './filters.js';
+import { lireAncre } from './ancre.js';
 import { initKeyboard } from './keyboard.js';
 import { telecharger, telechargerSauvegarde } from './backup.js';
 import { dessinerBilan, noteDuJour } from './bilan.js';
@@ -676,6 +678,36 @@ const appliquerOuvertureReglee = (ouverture) => {
   appliquerOuverture({ statut, horizon });
 };
 
+/**
+ * Sert l'ancre posée par le processus principal : une notification cliquée,
+ * le raccourci global de saisie. Voir public/js/ancre.js.
+ *
+ * L'ancre est effacée une fois servie : deux clics sur la même notification
+ * poseraient sinon la même ancre, et le second ne déclencherait rien.
+ */
+const servirAncre = async () => {
+  const cible = lireAncre(window.location.hash);
+  if (!cible) return;
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+
+  if (cible.saisir) {
+    $('task-title').focus();
+    return;
+  }
+  if (cible.vue) {
+    selectDue(cible.vue);
+    return;
+  }
+  try {
+    modifier.ouvrir(await api.fetchTask(cible.tache));
+  } catch {
+    // supprimée ou purgée depuis la notification : une fenêtre vide ne dirait rien
+    toast('Cette tâche n’existe plus.', 'error');
+  }
+};
+
+window.addEventListener('hashchange', servirAncre);
+
 (async () => {
   // les réglages et les catégories ensemble : les premiers décident de la vue
   // à demander, les secondes portent les couleurs que le rendu y lira
@@ -683,6 +715,8 @@ const appliquerOuvertureReglee = (ouverture) => {
 
   appliquerOuvertureReglee(valeurs?.ouverture);
   await refresh({ page: 1 });
+  // une notification cliquée alors que la fenêtre n'existait pas encore
+  await servirAncre();
 
   // en dernier : l'état de la mise à jour ne doit retarder l'ouverture de rien
   await misesAJour.rafraichir();

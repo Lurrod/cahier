@@ -570,6 +570,17 @@ async function sauvegardeAutomatique() {
 }
 
 /**
+ * L'émetteur de notifications. Hors Electron, le toast PowerShell ; dans
+ * l'application installée, le processus principal branche le sien, dont le
+ * clic revient au Cahier (voir lib/notifieur.js).
+ */
+let notifieur = null;
+const brancherNotifications = (envoyer) => {
+  notifieur = envoyer;
+};
+const notifier = (contenu) => (notifieur || sendNotification)(contenu);
+
+/**
  * Le point du matin, voir lib/point-du-matin.js. Appelé à chaque balayage :
  * c'est le module qui décide s'il est l'heure, et s'il a déjà parlé.
  *
@@ -578,7 +589,7 @@ async function sauvegardeAutomatique() {
  *
  * @param {{maintenant?: Date, envoyer?: Function}} options injectés par les tests
  */
-async function pointDuMatin({ maintenant = new Date(), envoyer = sendNotification } = {}) {
+async function pointDuMatin({ maintenant = new Date(), envoyer = notifier } = {}) {
   const base = { deletedAt: null, completed: false, parentId: null };
   const debut = startOfDay(maintenant);
   return envoyerLePoint({
@@ -610,7 +621,7 @@ async function pointDuMatin({ maintenant = new Date(), envoyer = sendNotificatio
  * @param {{now?: Date, envoyer?: Function}} options `envoyer` est injecté par
  *   les tests, pour qu'ils n'affichent jamais de vraie notification
  */
-async function sweepReminders({ now = new Date(), envoyer = sendNotification } = {}) {
+async function sweepReminders({ now = new Date(), envoyer = notifier } = {}) {
   const echus = await Task.find({
     'reminder.at': { $ne: null, $lte: now },
     'reminder.sentAt': null,
@@ -630,6 +641,9 @@ async function sweepReminders({ now = new Date(), envoyer = sendNotification } =
     await envoyer({
       title: aDire.length === 1 ? 'Cahier — rappel' : `Cahier — ${aDire.length} rappels`,
       message: messageGroupe(aDire),
+      // un rappel seul désigne sa tâche ; groupés, aucun ne l'emporte, et le
+      // clic ouvre simplement le Cahier
+      cible: aDire.length === 1 ? { tache: String(aDire[0]._id) } : null,
     });
   }
 
@@ -1273,3 +1287,5 @@ module.exports.migrateSchema = migrateSchema;
 module.exports.sweepReminders = sweepReminders;
 // exposé pour les tests, au même titre : horloge et émetteur injectés
 module.exports.pointDuMatin = pointDuMatin;
+// appelé par electron/main.js : ses notifications se cliquent
+module.exports.brancherNotifications = brancherNotifications;

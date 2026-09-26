@@ -297,6 +297,19 @@ jour du dernier point est retenu en base (`lib/memoire.js`) : un Cahier relancé
 redit pas ce qu'il a dit à 9 h. Passé midi, il ne part plus — ce ne serait plus le matin — et
 un matin sans rien n'envoie rien.
 
+**Les notifications se cliquent** dans l'application installée : elles passent par Electron,
+dont le clic revient au Cahier. Un rappel ouvre sa tâche dans « Modifier », des rappels
+groupés ouvrent le Cahier, le point du matin la vue « aujourd'hui ». Hors application
+(`npm start`), le toast PowerShell reste le repli, sans clic possible.
+
+**`Ctrl+Alt+N`, depuis n'importe quelle application**, ramène le Cahier le curseur dans la
+saisie (désactivable ; si une autre application tient déjà la combinaison, le Cahier le
+consigne et s'en passe).
+
+La page n'ayant aucun pont vers Node, le processus principal ne fait que poser une ancre sur
+son adresse — `#tache=<id>`, `#vue=today`, `#saisir` — que la page lit et valide elle-même
+(`public/js/ancre.js`), puis efface.
+
 La pose d'une mise à jour lève la garde avant d'installer : une fenêtre retenue dans la zone
 de notification bloquerait l'installation. La logique vit dans `lib/arriere-plan.js`,
 testable sans ouvrir de fenêtre.
@@ -405,7 +418,21 @@ format d'aller-retour est le JSON, pas le CSV.
 npm test          # API puis interface
 npm run test:api  # Jest + Supertest contre l'app Express
 npm run test:ui   # Vitest + happy-dom sur les modules du navigateur
+npm run test:e2e  # Playwright contre l'application EMPAQUETÉE (npm run dist d'abord)
 ```
+
+Les tests de bout en bout pilotent `dist/win-unpacked/Cahier.exe`, là où trois défauts de ce
+projet sont apparus sans jamais se montrer en développement. Chacun lance l'application sur un
+profil jetable (`CAHIER_USER_DATA`) : ni la vraie base, ni le registre, ni la recherche de mise
+à jour ne sont touchés, et un Cahier ouvert sur le poste n'empêche pas le lancement. Ils
+couvrent le démarrage, la fermeture qui range dans la zone de notification, `Ctrl+Alt+N`
+**frappé pour de vrai** au clavier du système, un rappel qui part en notification Electron et
+dont le clic ouvre la tâche, et le lancement caché à l'ouverture de session.
+
+Un toast Windows ne se clique pas depuis un test : le scénario capture la notification que le
+Cahier crée réellement et lui rend l'événement `click`, tel que Windows le ferait. Seul le
+geste de la souris sur le toast est simulé. Ils ne tournent pas dans la CI : la frappe au
+clavier demande une session de bureau.
 
 - `test/api/` : routes, validation, tri/filtres/recherche, horizons d'échéance,
   pagination, corbeille, paramètres hostiles (opérateurs Mongo passés en query).
@@ -519,6 +546,7 @@ cahier/
 │       ├── bilan.js        # Les sept barres de la semaine
 │       ├── maj.js          # Bandeau de mise à jour (n'ouvre que sur une version prête)
 │       ├── dupliquer.js    # Copie d'une tâche et de ses étapes
+│       ├── ancre.js        # Lire l'ancre posée par le processus principal
 │       ├── selection.js    # Sélection multiple et barre d'actions groupées
 │       ├── steps.js        # Étapes d'une tâche, dépliage et cache
 │       ├── keyboard.js     # Curseur et raccourcis clavier
@@ -545,6 +573,9 @@ cahier/
 │   ├── maj-etat.js         # État de la mise à jour, partagé Electron ↔ page
 │   ├── arriere-plan.js     # Zone de notification, fermeture, ouverture avec Windows
 │   ├── point-du-matin.js   # La notification du matin : quand, et quoi dire
+│   ├── notifieur.js        # Notifications Electron, dont le clic revient au Cahier
+│   ├── raccourci-global.js # Ctrl+Alt+N depuis n'importe quelle application
+│   ├── ancre.js            # L'ancre que le processus principal pose sur la page
 │   ├── memoire.js          # Petits états retenus d'un lancement à l'autre
 │   ├── systeme-routes.js   # GET /systeme et les actions, gardées par l'origine
 │   └── launcher.js         # Ce que le lanceur doit décider

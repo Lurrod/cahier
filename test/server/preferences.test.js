@@ -142,3 +142,12 @@ describe('le point du matin', () => {
     ).toBe(heure);
   });
 });
+
+describe('le raccourci global', () => {
+  test('actif par défaut : c’est tout son intérêt, et il se décoche', () => {
+    expect(DEFAUTS.arrierePlan.raccourciGlobal).toBe(true);
+    expect(
+      normaliserPreferences({ arrierePlan: { raccourciGlobal: false } }).arrierePlan.raccourciGlobal
+    ).toBe(false);
+  });
+});

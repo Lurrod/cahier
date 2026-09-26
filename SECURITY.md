@@ -73,6 +73,16 @@ presque tout le reste :
   n'écrit que des clés connues et des valeurs énumérées à l'avance. Une clé
   inventée est jetée, une valeur non reconnue retombe sur le défaut. Rien de ce
   qui entre par là n'atteint la base tel quel.
+- **Le processus principal ne parle à la page que par l'ancre de son adresse**
+  (`#tache=<id>`, `#vue=…`, `#saisir`) : aucun pont Node n'est ouvert pour
+  qu'une notification ou le raccourci global y agisse. L'ancre est construite
+  depuis une liste fermée de formes, et la page la revalide — un identifiant
+  de 24 caractères hexadécimaux, une vue connue — avant d'agir.
+- **`CAHIER_USER_DATA` isole un profil** : posée par les tests de bout en bout,
+  cette variable fait tourner l'application dans un dossier jetable et y coupe
+  l'inscription au démarrage de Windows et la recherche de mise à jour. Qui
+  peut définir l'environnement d'un processus du poste peut déjà lire les
+  données : elle n'ouvre rien de plus.
 - **Aucun texte interpolé dans un script** : les notifications passent leur
   contenu à PowerShell par l'environnement, jamais par la ligne de commande.
 - **Les actions sur la mise à jour sont gardées par l'origine** : un `POST` sur

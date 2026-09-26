@@ -47,6 +47,7 @@ const COQUILLE = [
   '/css/tokens.css',
   '/css/layout.css',
   '/css/components.css',
+  '/js/ancre.js',
   '/js/api.js',
   '/js/app.js',
   '/js/apparence.js',

@@ -35,6 +35,9 @@ export const listTasks = (query) => request(`tasks?${buildQuery(query)}`);
 
 export const fetchStats = () => request('tasks/stats');
 
+/** Une tâche seule, où qu'elle soit dans la liste : celle qu'une notification désigne. */
+export const fetchTask = (id) => request(`tasks/${encodeURIComponent(id)}`);
+
 export const createTask = (task) =>
   request('tasks', { method: 'POST', body: JSON.stringify(task) });
 

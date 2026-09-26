@@ -10,14 +10,38 @@
      — où trouver mongod (rien ne doit se télécharger au premier lancement).
    --------------------------------------------------------------------------- */
 
-const { app, BrowserWindow, shell, dialog, Menu, Tray } = require('electron');
+const {
+  app,
+  BrowserWindow,
+  shell,
+  dialog,
+  Menu,
+  Tray,
+  Notification,
+  globalShortcut,
+} = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 
 const { configurerMisesAJour } = require('../lib/updates');
 const { creerArrierePlan } = require('../lib/arriere-plan');
+const { creerNotifieur } = require('../lib/notifieur');
+const { creerRaccourciGlobal } = require('../lib/raccourci-global');
+const { ancrePour } = require('../lib/ancre');
 const { BINAIRE_CACHE } = require('../lib/mongod-version');
+
+/**
+ * Un profil de test : un dossier jetable à la place de %APPDATA%\Cahier.
+ *
+ * Posé par les tests de bout en bout, qui lancent l'application empaquetée.
+ * Avant le verrou d'instance unique, qui se prend dans le dossier de profil :
+ * sinon un Cahier installé et ouvert sur le poste ferait refuser le lancement.
+ * Avec lui, rien ne sort du dossier — ni inscription au démarrage de Windows,
+ * ni mise à jour tirée de GitHub.
+ */
+const PROFIL_DE_TEST = process.env.CAHIER_USER_DATA || null;
+if (PROFIL_DE_TEST) app.setPath('userData', PROFIL_DE_TEST);
 
 /** Une seule instance : deux processus ouvriraient la même base, et WiredTiger la verrouille. */
 if (!app.requestSingleInstanceLock()) {
@@ -36,7 +60,13 @@ const EN_PAQUET = app.isPackaged;
  * nomme une bonne fois.
  */
 app.setName('Cahier');
-app.setPath('userData', path.join(app.getPath('appData'), 'Cahier'));
+app.setPath('userData', PROFIL_DE_TEST || path.join(app.getPath('appData'), 'Cahier'));
+
+/**
+ * L'identité Windows du Cahier, celle de son raccourci d'installation. Sans
+ * elle, une notification ne sait à qui rendre son clic.
+ */
+app.setAppUserModelId('fr.cahier.todo');
 
 /**
  * Données de l'utilisateur, hors de l'application.
@@ -103,9 +133,43 @@ const arrierePlan = creerArrierePlan({
   Tray,
   Menu,
   icone: path.join(__dirname, 'icon.ico'),
-  enPaquet: EN_PAQUET,
+  // un profil de test n'inscrit rien : l'exécutable de test remplacerait
+  // l'inscription du vrai Cahier
+  enPaquet: EN_PAQUET && !PROFIL_DE_TEST,
   montrer,
 });
+
+/**
+ * Ramène le Cahier et lui dit quoi montrer : une tâche, une vue, la saisie.
+ *
+ * La page n'a aucun pont vers Node : le processus principal ne fait que poser
+ * une ancre sur son adresse, qu'elle lit et valide elle-même (public/js/ancre.js).
+ * Une page encore en chargement lira l'ancre à son démarrage.
+ */
+const allerA = (cible) => {
+  montrer();
+  const ancre = ancrePour(cible);
+  if (!fenetre || !ancre) return;
+  const poser = () =>
+    fenetre.webContents
+      .executeJavaScript(`location.hash = ${JSON.stringify(ancre)}`)
+      .catch((erreur) => console.warn(`Ancre : ${erreur?.message || erreur}`));
+  if (fenetre.webContents.isLoading()) fenetre.webContents.once('did-finish-load', poser);
+  else poser();
+};
+
+// un événement plutôt qu'un appel direct : c'est le même chemin pour un clic
+// sur une notification, le raccourci global — et les tests de bout en bout,
+// qui ne peuvent pas cliquer un toast Windows
+app.on('cahier-aller', allerA);
+
+const raccourci = creerRaccourciGlobal({
+  globalShortcut,
+  declencher: () => app.emit('cahier-aller', { saisir: true }),
+});
+
+// un raccourci global survit à la fenêtre : il doit être rendu en partant
+app.on('will-quit', () => raccourci.liberer());
 
 /**
  * Relâche Mongo — une fois, quelle que soit la porte de sortie.
@@ -173,8 +237,26 @@ app.whenReady().then(async () => {
 
     // avant la fenêtre : c'est le réglage qui dit si elle s'ouvre cachée.
     // Illisible, il retombe sur les défauts — garder, sans rien inscrire
-    arrierePlan.appliquer(await serveur.preferences.lire().catch(() => null));
-    serveur.preferences.surEcriture((valeurs) => arrierePlan.appliquer(valeurs));
+    const reglages = await serveur.preferences.lire().catch(() => null);
+    arrierePlan.appliquer(reglages);
+    raccourci.appliquer(reglages);
+    serveur.preferences.surEcriture((valeurs) => {
+      arrierePlan.appliquer(valeurs);
+      raccourci.appliquer(valeurs);
+    });
+
+    // des notifications qui se cliquent. Hors paquet, Windows ne connaît pas
+    // l'identité du Cahier, et le toast PowerShell reste le repli
+    if (EN_PAQUET && Notification.isSupported()) {
+      serveur.brancherNotifications(
+        creerNotifieur({
+          Notification,
+          icone: path.join(__dirname, 'icon.ico'),
+          surClic: (cible) => app.emit('cahier-aller', cible),
+        })
+      );
+    }
+
     creerFenetre(url, { cachee: arrierePlan.demarrerCache(process.argv) });
 
     // après la fenêtre, jamais avant : la mise à jour ne doit pas retarder
@@ -185,7 +267,8 @@ app.whenReady().then(async () => {
     configurerMisesAJour({
       updater: autoUpdater,
       etat: serveur.etatMaj,
-      enPaquet: EN_PAQUET,
+      // un profil de test ne va rien chercher sur GitHub
+      enPaquet: EN_PAQUET && !PROFIL_DE_TEST,
       // la pose lève d'abord la garde de la fenêtre : retenue dans la zone de
       // notification, elle empêcherait l'installation de se faire
       arreterServices: () => {

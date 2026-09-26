@@ -1894,6 +1894,49 @@ describe('Rappels', () => {
     expect(apres.body.reminder.sentAt).not.toBeNull();
   });
 
+  test('un rappel seul désigne sa tâche : le cliquer l’ouvrira', async () => {
+    const creee = await request(app)
+      .post('/tasks')
+      .send({ title: 'Dentiste', dueDate: dans(-30), reminder: { offset: 'atDue' } });
+    const { envoyees, envoyer } = collecteur();
+
+    await sweepReminders({ now: new Date(), envoyer });
+
+    expect(envoyees[0].cible).toEqual({ tache: creee.body._id });
+  });
+
+  test('des rappels groupés n’en désignent aucune : le clic ouvre le Cahier', async () => {
+    for (const title of ['Dentiste', 'Garage']) {
+      await request(app)
+        .post('/tasks')
+        .send({ title, dueDate: dans(-30), reminder: { offset: 'atDue' } });
+    }
+    const { envoyees, envoyer } = collecteur();
+
+    await sweepReminders({ now: new Date(), envoyer });
+
+    expect(envoyees[0].cible).toBeNull();
+  });
+
+  test('le processus principal peut brancher son propre émetteur', async () => {
+    // dans l'application installée, Electron remplace le toast PowerShell par
+    // une notification dont le clic revient au Cahier
+    const { brancherNotifications } = require('../../server');
+    await request(app)
+      .post('/tasks')
+      .send({ title: 'Dentiste', dueDate: dans(-30), reminder: { offset: 'atDue' } });
+    const { envoyees, envoyer } = collecteur();
+
+    brancherNotifications(envoyer);
+    try {
+      await sweepReminders({ now: new Date() });
+    } finally {
+      brancherNotifications(null);
+    }
+
+    expect(envoyees).toHaveLength(1);
+  });
+
   test('un rappel ne part qu’une fois, même si le balayage repasse', async () => {
     await request(app)
       .post('/tasks')
@@ -2330,8 +2373,13 @@ describe('Le point du matin', () => {
     await pointDuMatin({ maintenant: neufHeures(), envoyer });
 
     // une tâche rayée n'attend plus rien : elle n'est pas comptée
+    // le clic mène à la vue « aujourd'hui », qui montre aussi le retard
     expect(envois).toEqual([
-      { title: 'Le point du matin', message: '1 tâche aujourd’hui · 1 en retard' },
+      {
+        title: 'Le point du matin',
+        message: '1 tâche aujourd’hui · 1 en retard',
+        cible: { vue: 'today' },
+      },
     ]);
   });
 });

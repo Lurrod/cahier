@@ -127,6 +127,18 @@ describe('l’arrière-plan', () => {
   test('garde le Cahier dans la zone de notification, sans l’inscrire au démarrage', () => {
     // garder : c'est ce qui fait sonner les rappels fenêtre fermée ;
     // démarrer avec Windows : personne n'y est inscrit sans l'avoir demandé
-    expect(DEFAUTS.arrierePlan).toEqual({ garder: true, demarrage: false });
+    expect(DEFAUTS.arrierePlan).toMatchObject({ garder: true, demarrage: false });
+  });
+});
+
+describe('le point du matin', () => {
+  test('désactivé tant qu’on ne l’a pas demandé', () => {
+    expect(DEFAUTS.arrierePlan.pointDuMatin).toBe('');
+  });
+
+  test.each(['', '7', '8', '9', '10'])('accepte « %s »', (heure) => {
+    expect(
+      normaliserPreferences({ arrierePlan: { pointDuMatin: heure } }).arrierePlan.pointDuMatin
+    ).toBe(heure);
   });
 });

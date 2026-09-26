@@ -2293,3 +2293,45 @@ describe('Bilan', () => {
     expect((await lire(tache._id)).completedAt).toBe(avant);
   });
 });
+
+describe('Le point du matin', () => {
+  const { pointDuMatin } = require('../../server');
+  const neufHeures = () => {
+    const d = new Date();
+    d.setHours(9, 5, 0, 0);
+    return d;
+  };
+  const armer = async (heure) =>
+    request(app)
+      .put('/preferences')
+      .send({ arrierePlan: { pointDuMatin: heure } });
+
+  test('désactivé par défaut : rien ne part', async () => {
+    const envois = [];
+
+    await pointDuMatin({ maintenant: neufHeures(), envoyer: async (n) => envois.push(n) });
+
+    expect(envois).toEqual([]);
+  });
+
+  test('à l’heure dite, compte ce qui attend, et ne le redit pas', async () => {
+    await armer('9');
+    const aujourdhui = neufHeures();
+    aujourdhui.setHours(15, 0, 0, 0);
+    const hier = new Date(aujourdhui.getTime() - 86400000);
+    await request(app).post('/tasks').send({ title: 'Dentiste', dueDate: aujourdhui });
+    await request(app).post('/tasks').send({ title: 'Facture', dueDate: hier });
+    const faite = await request(app).post('/tasks').send({ title: 'Faite', dueDate: aujourdhui });
+    await request(app).put(`/tasks/${faite.body._id}`).send({ completed: true });
+    const envois = [];
+    const envoyer = async (n) => envois.push(n) > 0;
+
+    await pointDuMatin({ maintenant: neufHeures(), envoyer });
+    await pointDuMatin({ maintenant: neufHeures(), envoyer });
+
+    // une tâche rayée n'attend plus rien : elle n'est pas comptée
+    expect(envois).toEqual([
+      { title: 'Le point du matin', message: '1 tâche aujourd’hui · 1 en retard' },
+    ]);
+  });
+});

@@ -291,6 +291,12 @@ arrière-plan » :
 - **Ouvrir avec Windows** (décoché par défaut) — le Cahier démarre caché à l'ouverture de
   session, prêt à rappeler. Il n'est jamais lancé caché sans icône pour le retrouver.
 
+**Le point du matin** (désactivé par défaut) : à l'heure choisie, une notification résume ce
+qui tombe aujourd'hui, le retard et ma journée — tâches à faire seulement, étapes exclues. Le
+jour du dernier point est retenu en base (`lib/memoire.js`) : un Cahier relancé à 10 h ne
+redit pas ce qu'il a dit à 9 h. Passé midi, il ne part plus — ce ne serait plus le matin — et
+un matin sans rien n'envoie rien.
+
 La pose d'une mise à jour lève la garde avant d'installer : une fenêtre retenue dans la zone
 de notification bloquerait l'installation. La logique vit dans `lib/arriere-plan.js`,
 testable sans ouvrir de fenêtre.
@@ -538,6 +544,8 @@ cahier/
 │   ├── preferences-routes.js # GET/PUT /preferences, et le schéma servi à la page
 │   ├── maj-etat.js         # État de la mise à jour, partagé Electron ↔ page
 │   ├── arriere-plan.js     # Zone de notification, fermeture, ouverture avec Windows
+│   ├── point-du-matin.js   # La notification du matin : quand, et quoi dire
+│   ├── memoire.js          # Petits états retenus d'un lancement à l'autre
 │   ├── systeme-routes.js   # GET /systeme et les actions, gardées par l'origine
 │   └── launcher.js         # Ce que le lanceur doit décider
 ├── electron/

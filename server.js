@@ -17,6 +17,8 @@ const { lireReplanification, replanifier } = require('./lib/replanifier');
 const { sendNotification } = require('./lib/notify');
 const { sauvegarderSiBesoin } = require('./lib/sauvegarde-auto');
 const { dateDeFin, debutDuBilan, semaine } = require('./lib/bilan');
+const { envoyerLePoint } = require('./lib/point-du-matin');
+const { creerMemoire } = require('./lib/memoire');
 const { listenWithFallback } = require('./lib/listen');
 const { creerDepotPreferences } = require('./lib/preferences-depot');
 const { creerRoutesPreferences } = require('./lib/preferences-routes');
@@ -149,6 +151,7 @@ if (process.env.NODE_ENV !== 'test') {
       // `unref` pour que ce minuteur n'empêche jamais le serveur de s'arrêter.
       setInterval(() => {
         sweepReminders().catch((e) => console.error('Balayage des rappels :', e.message));
+        pointDuMatin().catch((e) => console.error('Point du matin :', e.message));
       }, 60 * 1000).unref();
     } catch (err) {
       console.error('Erreur de connexion à MongoDB:', err.stack || err.message);
@@ -564,6 +567,34 @@ async function sauvegardeAutomatique() {
   } catch (error) {
     console.error('Sauvegarde automatique impossible :', error.message);
   }
+}
+
+/**
+ * Le point du matin, voir lib/point-du-matin.js. Appelé à chaque balayage :
+ * c'est le module qui décide s'il est l'heure, et s'il a déjà parlé.
+ *
+ * Les comptes ne portent que sur les racines à faire : une étape n'est pas
+ * une tâche de plus, et une tâche rayée n'attend plus rien.
+ *
+ * @param {{maintenant?: Date, envoyer?: Function}} options injectés par les tests
+ */
+async function pointDuMatin({ maintenant = new Date(), envoyer = sendNotification } = {}) {
+  const base = { deletedAt: null, completed: false, parentId: null };
+  const debut = startOfDay(maintenant);
+  return envoyerLePoint({
+    maintenant,
+    envoyer,
+    memoire,
+    lireHeure: async () => (await depotPreferences.lire()).arrierePlan.pointDuMatin,
+    compter: async () => {
+      const [aujourdhui, retard, journee] = await Promise.all([
+        Task.countDocuments({ ...base, dueDate: { $gte: debut, $lt: addDays(debut, 1) } }),
+        Task.countDocuments({ ...base, ...dueClause('overdue', maintenant) }),
+        Task.countDocuments({ ...base, ...dueClause('myday', maintenant) }),
+      ]);
+      return { aujourdhui, retard, journee };
+    },
+  });
 }
 
 /**
@@ -1169,6 +1200,7 @@ app.delete('/categories/:name', async (req, res) => {
 // tout ce qui touche aux préférences vit dans lib/ : ce fichier ne fait que
 // poser le dépôt sur la connexion Mongo et monter le routeur
 const depotPreferences = creerDepotPreferences(mongoose);
+const memoire = creerMemoire(mongoose);
 app.use('/preferences', creerRoutesPreferences({ depot: depotPreferences }));
 
 /**
@@ -1239,3 +1271,5 @@ module.exports.migrateSchema = migrateSchema;
 // exposé pour les tests : le balayage prend son horloge et son émetteur en
 // arguments, pour n'afficher aucune vraie notification
 module.exports.sweepReminders = sweepReminders;
+// exposé pour les tests, au même titre : horloge et émetteur injectés
+module.exports.pointDuMatin = pointDuMatin;

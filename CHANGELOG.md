@@ -23,6 +23,11 @@ des postes déjà installés.
 
 - **Tous les raccourcis sur une fiche.** `?` (ou `Ctrl+K` → « Raccourcis
   clavier ») montre chaque touche et ce qu'elle fait, rangées par usage.
+- **Le point du matin.** Réglages → En arrière-plan : à l'heure choisie (7 h à
+  10 h), une notification dit ce qui tombe aujourd'hui, ce qui est en retard et
+  ce qui est dans ma journée. Une fois par jour, même si le Cahier est relancé ;
+  jamais passé midi ; et rien les matins où rien n'attend. Désactivé tant
+  qu'on ne l'a pas demandé.
 - **Ouvrir le Cahier avec Windows.** Réglages → En arrière-plan : il démarre
   discrètement dans la zone de notification à l'ouverture de session, prêt à
   rappeler. Désactivé tant qu'on ne l'a pas demandé.

@@ -8,7 +8,21 @@ Une version se publie en étiquetant un commit : `npm version <niveau>` puis
 release brouillon ; publier ce brouillon dans GitHub est ce qui la rend visible
 des postes déjà installés.
 
-## [Non publié]
+## [3.15.2] — 2026-09-27
+
+> Les versions 3.4.0 à 3.15.1 n'ont pas été publiées séparément : chacune
+> note un changement, et toutes parviennent ensemble aux postes installés
+> avec la 3.15.2.
+
+### Corrigé
+
+- **La mise à jour se suit en direct.** Dans les Réglages, la ligne d'état
+  restait figée sur ce qu'elle avait lu à l'ouverture : « Recherche en cours… »
+  ou « 42 % » sans jamais bouger. Elle avance désormais sous les yeux, et le
+  bouton de redémarrage paraît dès que la version est prête. Le bandeau, lui,
+  l'annonce dans les secondes qui suivent, et non plus jusqu'à une minute après.
+
+## [3.15.1] — 2026-09-27
 
 ### Corrigé
 
@@ -16,17 +30,8 @@ des postes déjà installés.
   le composeur, la fenêtre « Modifier » ou les Réglages, le premier clic
   soulignait chaque champ du cadre, et le cadre lui-même — on ne voyait plus
   où l'on écrivait. Seul le champ qui a la main porte désormais son contour.
-- **La mise à jour se suit en direct.** Dans les Réglages, la ligne d'état
-  restait figée sur ce qu'elle avait lu à l'ouverture : « Recherche en cours… »
-  ou « 42 % » sans jamais bouger. Elle avance désormais sous les yeux, et le
-  bouton de redémarrage paraît dès que la version est prête. Le bandeau, lui,
-  l'annonce dans les secondes qui suivent, et non plus jusqu'à une minute après.
 
 ## [3.15.0] — 2026-09-27
-
-> Les versions 3.4.0 à 3.14.0 n'ont pas été publiées séparément : chacune
-> note un changement, et toutes parviennent ensemble aux postes installés
-> avec la 3.15.0.
 
 ### Ajouté
 

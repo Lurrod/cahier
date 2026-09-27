@@ -10,9 +10,8 @@ des postes déjà installés.
 
 ## [3.15.2] — 2026-09-27
 
-> Les versions 3.4.0 à 3.15.1 n'ont pas été publiées séparément : chacune
-> note un changement, et toutes parviennent ensemble aux postes installés
-> avec la 3.15.2.
+> La 3.15.1 n'a pas été publiée séparément : elle parvient aux postes
+> installés avec la 3.15.2.
 
 ### Corrigé
 
@@ -32,6 +31,10 @@ des postes déjà installés.
   où l'on écrivait. Seul le champ qui a la main porte désormais son contour.
 
 ## [3.15.0] — 2026-09-27
+
+> Les versions 3.4.0 à 3.14.0 n'ont pas été publiées séparément : chacune
+> note un changement, et toutes sont parvenues ensemble aux postes
+> installés avec la 3.15.0.
 
 ### Ajouté
 
